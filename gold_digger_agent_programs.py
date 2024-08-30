@@ -1,22 +1,48 @@
 import random
 
+from saboteur_game_environment import SaboteurGameEnvironment as se
+
 def gold_digger_agent_program(percepts, actuators):
     actions = []
 
-    game_state = {
+    gs = {
         'game-board': percepts['game-board-sensor'],
         'player-turn': percepts['turn-taking-indicator'],
-        'mining-state': percepts['cards-in-hand-sensor'],
-        'player-cards': percepts['can-mine-sensor']
+        'mining-state': percepts['can-mine-sensor'],
+        'player-cards': percepts['cards-in-hand-sensor'],
+        'reported-cards': percepts['reported-cards-sensor'],
+        'cards-played': percepts['cards-played-sensor']
     }
 
-    x = random.choice(range(20))
-    y = random.choice(range(20))
+    board = gs['game-board']
+    legal_moves = se.get_legal_actions(gs)
+    # Dictionary of cards played by each player
+    # Dictionary of players and suspected saboteur
+    # List of all possible cards, remove what is on the board
+    # Dictionary of goal cards we have ruled out
+    # Location of gold card
+    # List of all legal moves for current gamestate
 
-    r = "dynamite-{0}-{1}-{2}".format(14, 13, 0)
-    g = "rotate-false"
 
-    actions.append(r)
-    actions.append(g)
+    # If played Dynamite, and cut path probably Saboteur
+    # We will discard Dynamite, or use it in a way that doesn't help the Saboteur, e.g. cut a path to a dead end.
+
+    # Maybe we use a ratio of (PathCards) to (DeadEnds + Dynamite) to determine if played could be Saboteur
+
+    # Prioritise PathCards with more access points for versatility
+
+    # If player suspected of being Saboteur, we will play Sabotage on them
+
+    # If player suspected of being GoldDigger, and player is not mining, play mend on them
+
+
+
+
+
+
+
+    move = random.choice(legal_moves)
+
+    actions.append(move)
 
     return actions

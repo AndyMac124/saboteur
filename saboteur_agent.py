@@ -15,6 +15,7 @@ class SaboteurAgent(Agent):
         self.add_sensor('cards-in-hand-sensor', [], lambda m: all(isinstance(opt, TableCard) or isinstance(opt, ActionCard) or opt is None for opt in m))
         self.add_sensor('can-mine-sensor', True, lambda v: isinstance(v, bool))
         self.add_sensor('reported-cards-sensor', {}, lambda v: all(isinstance(k, tuple) and len(k) == 2 and all(isinstance(i, int) for i in k) and isinstance(val, bool) for k, val in v.items()))
+        self.add_sensor('cards-played-sensor', {}, lambda v: all(isinstance(k, int) and isinstance(v[k], list) and all(isinstance(c, TableCard) for c in v[k]) for k in v))
 
     def add_all_actuators(self):
         # place, x, y, card

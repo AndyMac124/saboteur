@@ -17,6 +17,7 @@ class SaboteurGameEnvironment(GameEnvironment):
         self._players_cards: List[List[Optional[Card]]] = [[] for _ in range(8)]
         self._deck = Deck()
         self._reported_cards = {}
+        self._played_cards = {}
 
     def add_player(self, player):
         self._players.append(player)
@@ -35,7 +36,8 @@ class SaboteurGameEnvironment(GameEnvironment):
             'turn-taking-indicator': game_state['player-turn'],
             'can-mine-sensor': game_state['mining-state'][self._player_turn],
             'cards-in-hand-sensor': game_state['player-cards'],
-            'reported-cards-sensor': game_state['reported-cards']
+            'reported-cards-sensor': game_state['reported-cards'],
+            'cards-played-sensor': game_state['player-cards']
         }
 
     def get_player(self, player_id):
@@ -48,6 +50,12 @@ class SaboteurGameEnvironment(GameEnvironment):
         player_id = gamestate['player-turn']
         return player_id
 
+    def add_played_card(self, player_id, card):
+        if player_id in self._played_cards:
+            self._played_cards[player_id].append(card)
+        else:
+            self._played_cards[player_id] = [card]
+
     def get_game_state(self):
         game_state = {
             'game-board': self._game_board.copy(),
@@ -55,11 +63,11 @@ class SaboteurGameEnvironment(GameEnvironment):
             'mining-state': self._mining_states,
             'player-cards': self._players_cards[self._player_turn],
             'deck': self._deck,
-            'reported-cards': self._reported_cards # Dict of player_id and  tuple (goal_index, bool)
+            'reported-cards': self._reported_cards, # Dict of player_id and  tuple (goal_index, bool)
+            'players': self._played_cards # Dict of player_id and list of cards played
         }
         return game_state
 
-    # TODO account for dynamite
     def get_winner(self):
         gold_location = self._game_board.gold_loc
         g_x, g_y = gold_location
@@ -70,7 +78,9 @@ class SaboteurGameEnvironment(GameEnvironment):
                 and game_board[(g_x, g_y + 1)] is None
                 and game_board[(g_x, g_y - 1)] is None):
             return 'saboteurs'
-        return 'gold-diggers'
+
+        if self._game_board.is_connected_start(gold_location):
+            return 'gold-diggers'
 
 
     # TODO determine payoff for a player based on game state
@@ -215,7 +225,8 @@ class SaboteurGameEnvironment(GameEnvironment):
             'player-turn': self._player_turn,
             'mining-state': self._mining_states,
             'player-cards': self._players_cards[self._player_turn],
-            'reported-cards': self._reported_cards
+            'reported-cards': self._reported_cards,
+            'played-cards': self._played_cards
         }
 
         player_turn = game_state['player-turn']
@@ -229,6 +240,7 @@ class SaboteurGameEnvironment(GameEnvironment):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
             card = self._players_cards[player_turn][card_index]
             self._game_board.add_path_card(row, col, card)
+            self.add_played_card(player_turn, card)
             new_gs['player-cards'].remove(card)
         elif action.startswith('rotate'):
             _, x, y, z = action.split('-')
@@ -239,6 +251,7 @@ class SaboteurGameEnvironment(GameEnvironment):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
             card = self._players_cards[player_turn][card_index]
             self._game_board.add_flipped_path_card(row, col, card)
+            self.add_played_card(player_turn, card)
             new_gs['player-cards'].remove(card)
         elif action.startswith('discard'):
             _, index = action.split('-')
@@ -252,6 +265,7 @@ class SaboteurGameEnvironment(GameEnvironment):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
             card = self._players_cards[player_turn][card_index]
             new_gs['player-cards'].remove(card)
+            self.add_played_card(player_turn, card)
             self._mining_states[int(p)] = True
         elif action.startswith('sabotage'):
             _, p, z = action.split('-')
@@ -260,6 +274,7 @@ class SaboteurGameEnvironment(GameEnvironment):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
             card = self._players_cards[player_turn][card_index]
             new_gs['player-cards'].remove(card)
+            self.add_played_card(player_turn, card)
             self._mining_states[int(p)] = False
         elif action.startswith('dynamite'):
             _, x, y, z = action.split('-')
@@ -270,6 +285,7 @@ class SaboteurGameEnvironment(GameEnvironment):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
             card = self._players_cards[player_turn][card_index]
             self._game_board.add_path_card(row, col, card)
+            self.add_played_card(player_turn, card)
             new_gs['player-cards'].remove(card)
         elif action.startswith('map'):
             _, index, y, z = action.split('-')
@@ -277,6 +293,7 @@ class SaboteurGameEnvironment(GameEnvironment):
             if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
             card = self._players_cards[player_turn][card_index]
+            self.add_played_card(player_turn, card)
             new_gs['player-cards'].remove(card)
             card = self._game_board.peak_goal_card(int(index))
             if y == 0:
