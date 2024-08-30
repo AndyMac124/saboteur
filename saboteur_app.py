@@ -15,17 +15,20 @@ if __name__ == '__main__':
         possible_players.append('saboteur_agent_program')
     random.shuffle(possible_players)
 
-    players = []
-    for _ in range(8):
-        players.append(possible_players.pop())
+    players = {}
+    for i in range(8):
+        if possible_players[i] == 'gold_digger_agent_program':
+            name = 'gold_digger_agent_program_{0}'.format(i)
+            player = SaboteurAgent(name, gold_digger_agent_program)
+        else:
+            name = 'saboteur_agent_program_{0}'.format(i)
+            player = SaboteurAgent(name, saboteur_agent_program)
+        players[i] = [name, player]
 
     game_environment = SaboteurGameEnvironment(players)
 
-    for i in range(8):
-        if players[i] == 'gold_digger_agent_program':
-            player = SaboteurAgent(gold_digger_agent_program)
-        else:
-            player = SaboteurAgent(saboteur_agent_program)
-        game_environment.add_player(player)
+    for key, value in players.items():
+        game_environment.add_player_idx(key, value)
+        print(key, value)
 
     game = SaboteurGame(game_environment, players)

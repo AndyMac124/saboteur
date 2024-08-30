@@ -1,16 +1,17 @@
-from une_ai.models import Agent, GridMap
-from cards import Names
+from une_ai.models import Agent
+from typing import Dict, Tuple, Optional
+from playing_cards import TableCard, ActionCard
 
 class SaboteurAgent(Agent):
 
-    def __init__(self, agent_program):
-        super().__init__("Saboteur Agent", agent_program)
+    def __init__(self, agent_name, agent_program):
+        super().__init__(agent_name, agent_program)
 
     def add_all_sensors(self):
-        self.add_sensor('game-board-sensor', GridMap(20, 20, None),
-                        lambda m: all(opt in Names or opt is None for loc in m.get_map() for opt in loc))
+        board: Dict[Tuple[int, int], Optional[TableCard]] = {(x, y): None for x in range(20) for y in range(20)}
+        self.add_sensor('game-board-sensor', board, lambda m: all(isinstance(opt, TableCard) or opt is None for opt in m.values()))
         self.add_sensor('turn-taking-indicator', 0, lambda n: n in range(0, 8))
-        #cards-in-hand-sensor
+        self.add_sensor('cards-in-hand-sensor', [], lambda m: all(isinstance(opt, TableCard) or isinstance(opt, ActionCard) or opt is None for opt in m))
         self.add_sensor('can-mine-sensor', True, lambda v: isinstance(v, bool))
 
     def add_all_actuators(self):

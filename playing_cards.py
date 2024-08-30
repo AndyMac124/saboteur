@@ -119,11 +119,19 @@ class GoalCard(TableCard):
         super().__init__(Names.GOAL)
         self.is_special = True
         self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
-        self.image = self.load_image(self.name)
+        self.hidden = True
+        if self.hidden:
+            self.image = self.load_image(self.name)
+        else:
+            self.image = self.load_image(Names.CROSS_SECTION)
 
 class GoldCard(TableCard):
     def __init__(self):
         super().__init__(Names.GOLD)
         self.is_special = True
+        self.hidden = True
         self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
-        self.image = self.load_image(self.name)
+        if self.hidden:
+            self.image = self.load_image(Names.GOAL)
+        else:
+            self.image = self.load_image(self.name)
