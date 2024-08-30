@@ -51,19 +51,24 @@ class SaboteurGame:
 
     def _draw_board(self):
         board = self._environment.get_game_board().get_board()
+        flipped = self._environment.get_game_board().get_flipped_cards()
         for (row, col), card in board.items():
             if card is not None:
                 x = col * self._card_size[0]
                 y = row * self._card_size[1]
                 image = card.image
-                self._display.blit(image, (x, y))
+                if (row, col) in flipped:
+                    flipped_image = pygame.transform.flip(image, True, True)  # Flip the image horizontally
+                    self._display.blit(flipped_image, (x, y))
+                else:
+                    self._display.blit(image, (x, y))
 
     def place_card(game_cells, card_name, pos):
         game_cells[pos] = card_name
 
     def _play_step(self):
         game_state = self._environment.get_game_state()
-        if type(self._environment).is_terminal(game_state):
+        if self._environment.is_terminal():
             return
 
         cur_type = type(self._environment).turn(game_state)
@@ -106,7 +111,7 @@ class SaboteurGame:
     def _draw_frame(self):
         self._reset_bg()
         self._draw_board()
-        if type(self._environment).is_terminal(self._environment.get_game_state()):
+        if self._environment.is_terminal():
             self._draw_game_over()
         else:
             gs = self._environment.get_game_state()

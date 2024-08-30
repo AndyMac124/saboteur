@@ -33,16 +33,17 @@ class Names(Enum):
     DE_WN = 22
     DE_WS = 23
     DE_W = 24
+    BROKEN = 25
 
 class Card(ABC):
-    def __init__(self, hidden=True, flipped=False):
+    def __init__(self, hidden=False, flipped=False):
         self.hidden = hidden
         self.flipped = flipped
         self.is_special = False
         self.access_points = []
 
     def __str__(self):
-        return f"Card(name={self.name})"
+        return f"{self.name}"
 
     def face_down(self):
         self.hidden = True
@@ -53,22 +54,45 @@ class Card(ABC):
     def get_access_points(self):
         return self.access_points
 
-    def rotate_card(self):
-        self.flipped = not self.flipped
-        access_points = self.get_access_points()
-        for access in access_points:
-            if access == dirs.NORTH:
-                self.access_points.append(dirs.SOUTH)
-                self.access_points.remove(dirs.NORTH)
-            elif access == dirs.EAST:
-                self.access_points.append(dirs.WEST)
-                self.access_points.remove(dirs.EAST)
-            elif access == dirs.SOUTH:
-                self.access_points.append(dirs.NORTH)
-                self.access_points.remove(dirs.SOUTH)
-            elif access == dirs.WEST:
-                self.access_points.append(dirs.EAST)
-                self.access_points.remove(dirs.WEST)
+    @staticmethod
+    def static_access_points(card_name, flipped=False):
+        access_points_map = {
+            Names.START: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
+            Names.GOAL: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
+            Names.GOLD: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
+            Names.CROSS_SECTION: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
+            Names.VERTICAL_PATH: [dirs.NORTH, dirs.SOUTH],
+            Names.HORIZONTAL_PATH: [dirs.EAST, dirs.WEST],
+            Names.TURN_LEFT: [dirs.NORTH, dirs.EAST],
+            Names.TURN_RIGHT: [dirs.NORTH, dirs.WEST],
+            Names.VERT_T: [dirs.NORTH, dirs.SOUTH, dirs.EAST],
+            Names.HOR_T: [dirs.NORTH, dirs.EAST, dirs.WEST],
+            Names.DE_ALL: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
+            Names.DE_3_E: [dirs.NORTH, dirs.EAST, dirs.WEST],
+            Names.DE_3_S: [dirs.NORTH, dirs.SOUTH, dirs.WEST],
+            Names.DE_EW: [dirs.EAST, dirs.WEST],
+            Names.DE_N: [dirs.NORTH],
+            Names.DE_NS: [dirs.NORTH, dirs.SOUTH],
+            Names.DE_WN: [dirs.NORTH, dirs.WEST],
+            Names.DE_WS: [dirs.SOUTH, dirs.WEST],
+            Names.DE_W: [dirs.WEST],
+            Names.BROKEN: [],
+            Names.DYNAMITE: []
+        }
+
+        if flipped:
+            access_points_map[Names.TURN_LEFT] = [dirs.NORTH, dirs.WEST]
+            access_points_map[Names.TURN_RIGHT] = [dirs.NORTH, dirs.EAST]
+            access_points_map[Names.VERT_T] = [dirs.NORTH, dirs.SOUTH, dirs.WEST]
+            access_points_map[Names.HOR_T] = [dirs.NORTH, dirs.WEST, dirs.EAST]
+            access_points_map[Names.DE_3_E] = [dirs.NORTH, dirs.WEST, dirs.EAST]
+            access_points_map[Names.DE_3_S] = [dirs.NORTH, dirs.SOUTH, dirs.WEST]
+            access_points_map[Names.DE_WN] = [dirs.NORTH, dirs.WEST]
+            access_points_map[Names.DE_WS] = [dirs.SOUTH, dirs.WEST]
+            access_points_map[Names.DE_NS] = [dirs.NORTH, dirs.SOUTH]
+            access_points_map[Names.DE_W] = [dirs.WEST]
+
+        return access_points_map.get(card_name, [])
 
 class ActionCard(Card):
     def __init__(self, name):
@@ -105,12 +129,37 @@ class TableCard(Card):
             Names.DE_NS: "images/cards/de_ns.png",
             Names.DE_WN: "images/cards/de_wn.png",
             Names.DE_WS: "images/cards/de_ws.png",
-            Names.DE_W: "images/cards/de_w.png"
+            Names.DE_W: "images/cards/de_w.png",
+            Names.BROKEN: "images/cards/broken.png",
         }
         return pygame.image.load(image_paths[self.name]).convert_alpha()
 
     def get_image(self):
         return self.image
+
+    def rotate_card(self):
+        self.flipped = not self.flipped
+        self.image = pygame.transform.flip(self.image, True, False)
+
+        access_points = self.get_access_points()
+        for access in access_points:
+            if access == dirs.NORTH:
+                self.access_points.append(dirs.SOUTH)
+                self.access_points.remove(dirs.NORTH)
+            elif access == dirs.EAST:
+                self.access_points.append(dirs.WEST)
+                self.access_points.remove(dirs.EAST)
+            elif access == dirs.SOUTH:
+                self.access_points.append(dirs.NORTH)
+                self.access_points.remove(dirs.SOUTH)
+            elif access == dirs.WEST:
+                self.access_points.append(dirs.EAST)
+                self.access_points.remove(dirs.WEST)
+
+class DeadEndCard(TableCard):
+    def __init__(self, name):
+        super().__init__(name)
+
 
 class CrossSectionCard(TableCard):
     def __init__(self):
@@ -161,95 +210,95 @@ class HorTCard(TableCard):
         self.name = Names.HOR_T
         self.image = self.load_image(self.name)
 
-class DEAllCard(TableCard):
+class DEAllCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_ALL)
         self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
         self.name = Names.DE_ALL
         self.image = self.load_image(self.name)
 
-class DE3ECard(TableCard):
+class DE3ECard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_3_E)
         self.access_points = [dirs.NORTH, dirs.EAST, dirs.WEST]
         self.name = Names.DE_3_E
         self.image = self.load_image(self.name)
 
-class DE3SCard(TableCard):
+class DE3SCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_3_S)
         self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.WEST]
         self.name = Names.DE_3_S
         self.image = self.load_image(self.name)
 
-class DEEWCard(TableCard):
+class DEEWCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_EW)
         self.access_points = [dirs.EAST, dirs.WEST]
         self.name = Names.DE_EW
         self.image = self.load_image(self.name)
 
-class DENCard(TableCard):
+class DENCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_N)
         self.access_points = [dirs.NORTH]
         self.name = Names.DE_N
         self.image = self.load_image(self.name)
 
-class DENSCard(TableCard):
+class DENSCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_NS)
         self.access_points = [dirs.NORTH, dirs.SOUTH]
         self.name = Names.DE_NS
         self.image = self.load_image(self.name)
 
-class DEWNCard(TableCard):
+class DEWNCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_WN)
         self.access_points = [dirs.NORTH, dirs.WEST]
         self.name = Names.DE_WN
         self.image = self.load_image(self.name)
 
-class DEWSCard(TableCard):
+class DEWSCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_WS)
         self.access_points = [dirs.SOUTH, dirs.WEST]
         self.name = Names.DE_WS
         self.image = self.load_image(self.name)
 
-class DEWCards(TableCard):
+class DEWCards(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_W)
         self.access_points = [dirs.WEST]
         self.name = Names.DE_W
         self.image = self.load_image(self.name)
 
-class StartCard(TableCard):
+class SpecialCard(TableCard):
+    def __init__(self, name):
+        super().__init__(name)
+        self.is_special = True
+
+class StartCard(SpecialCard):
     def __init__(self):
         super().__init__(Names.START)
-        self.is_special = True
         self.name = Names.START
         self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
         self.image = self.load_image(self.name)
 
-class GoalCard(TableCard):
+class GoalCard(ActionCard):
     def __init__(self):
         super().__init__(Names.GOAL)
-        self.is_special = True
         self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
-        self.hidden = True
-        if self.hidden:
-            self.image = self.load_image(self.name)
-        else:
-            self.image = self.load_image(Names.CROSS_SECTION)
+        self.image = pygame.image.load("images/cards/goal.png").convert_alpha()
 
-class GoldCard(TableCard):
+class GoldCard(SpecialCard):
     def __init__(self):
         super().__init__(Names.GOLD)
-        self.is_special = True
-        self.hidden = True
         self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
-        if self.hidden:
-            self.image = self.load_image(Names.GOAL)
-        else:
-            self.image = self.load_image(self.name)
+        self.image = self.load_image(Names.GOLD)
+
+class BrokenCard(SpecialCard):
+    def __init__(self):
+        super().__init__(Names.BROKEN)
+        self.access_points = []
+        self.image = self.load_image(Names.BROKEN)

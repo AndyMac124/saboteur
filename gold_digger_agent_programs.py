@@ -13,8 +13,10 @@ def gold_digger_agent_program(percepts, actuators):
     x = random.choice(range(20))
     y = random.choice(range(20))
 
-    r = "place-{0}-{1}-0".format(x, y)
+    r = "dynamite-{0}-{1}-{2}".format(14, 13, 0)
+    g = "rotate-false"
 
     actions.append(r)
+    actions.append(g)
 
     return actions

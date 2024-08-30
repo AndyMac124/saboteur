@@ -59,3 +59,6 @@ class Deck():
         assert len(self._deck) > 0, "There are no more cards in the deck"
 
         return self._deck.pop()
+
+    def is_empty(self):
+        return len(self._deck) == 0
