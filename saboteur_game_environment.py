@@ -8,20 +8,14 @@ from deck import Deck
 
 class SaboteurGameEnvironment(GameEnvironment):
 
-    def __init__(self, players):
+    def __init__(self):
         super().__init__("Saboteur Game Environment")
         self._game_board = GameBoard()
-        self._players = players
-        self._player_turn = list(players.keys())[0]
-        self._mining_states = {player_id: True for player_id in players.keys()}
-        self._player_cards: Dict[str, List[Optional[Card]]] = {player_id: [] for player_id in players.keys()}
+        self._players = []
+        self._player_turn = 0
+        self._mining_states = [True] * 8
+        self._players_cards: List[List[Optional[Card]]] = [[] for _ in range(8)]
         self._deck = Deck()
-
-    def add_player_idx(self, player_id, player):
-        self._players[player_id] = player
-        self._mining_states[player_id] = True
-        for i in range(4):
-            self._player_cards[player_id].append(self._deck.draw())
 
     def add_player(self, player):
         self._players.append(player)
@@ -35,7 +29,7 @@ class SaboteurGameEnvironment(GameEnvironment):
             'game-board-sensor': game_state['game-board'],
             'turn-taking-indicator': game_state['player-turn'],
             'can-mine-sensor': game_state['mining-state'][self._player_turn],
-            'cards-in-hand-sensor': game_state['player-cards'][self._player_turn]
+            'cards-in-hand-sensor': game_state['player-cards']
         }
 
     def get_player(self, player_id):
@@ -53,7 +47,7 @@ class SaboteurGameEnvironment(GameEnvironment):
             'game-board': self._game_board.copy(),
             'player-turn': self._player_turn,
             'mining-state': self._mining_states,
-            'player-cards': self._player_cards
+            'player-cards': self._players_cards[self._player_turn]
         }
         return game_state
 
@@ -74,9 +68,7 @@ class SaboteurGameEnvironment(GameEnvironment):
         return []
 
     def _change_player_turn(self):
-        player_ids = list(self._players.keys())
-        current_index = player_ids.index(self._player_turn)
-        self._player_turn = player_ids[(current_index + 1) % len(player_ids)]
+        self._player_turn = (self._player_turn + 1) % len(self._players)
 
     # TODO next gamestate based on an action
     def transition_result(self, game_state, action):
@@ -85,7 +77,5 @@ class SaboteurGameEnvironment(GameEnvironment):
     def state_transition(self, agent_actuators):
         game_state = self.get_game_state()
         print(f"Player Turn: {self._player_turn}")
-        action = agent_actuators[self._player_turn]
-        game_state = self.transition_result(game_state, action)
         self._change_player_turn()
         return game_state

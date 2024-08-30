@@ -67,8 +67,6 @@ class SaboteurGame:
             return
 
         cur_type = type(self._environment).turn(game_state)
-        print("PRINTING TYPE")
-        print(cur_type)
 
         # SENSE
         self._agents[cur_type].sense(self._environment)

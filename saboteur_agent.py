@@ -2,6 +2,7 @@ from une_ai.models import Agent
 from typing import Dict, Tuple, Optional
 from playing_cards import TableCard, ActionCard
 
+
 class SaboteurAgent(Agent):
 
     def __init__(self, agent_name, agent_program):
