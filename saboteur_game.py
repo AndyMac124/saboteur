@@ -50,7 +50,7 @@ class SaboteurGame:
         self._display.blit(self._background_image, (0, 0))
 
     def _draw_board(self):
-        board = self._environment.get_game_board()
+        board = self._environment.get_game_board().get_board()
         for (row, col), card in board.items():
             if card is not None:
                 x = col * self._card_size[0]

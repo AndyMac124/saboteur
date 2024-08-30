@@ -1,6 +1,6 @@
 from une_ai.models import Agent
 from typing import Dict, Tuple, Optional
-from playing_cards import TableCard, ActionCard
+from playing_cards import TableCard, ActionCard, Names
 
 
 class SaboteurAgent(Agent):
@@ -16,10 +16,10 @@ class SaboteurAgent(Agent):
         self.add_sensor('can-mine-sensor', True, lambda v: isinstance(v, bool))
 
     def add_all_actuators(self):
-        self.add_actuator('place-card', ('place', 0, 0),
+        self.add_actuator('place-card', ('place', 0, 0, 0),
                           lambda v: isinstance(v, tuple) and v[0] == 'place' and v[1] in range(0, 20)
                                     and isinstance(v[1], int) and v[2] in range(0, 20)
-                                    and isinstance(v[2], int))
+                                    and isinstance(v[2], int) and (isinstance(v[3], int)) and v[3] in range(0, 4))
         self.add_actuator('discard-card', ('discard', 0), lambda v: isinstance(v, tuple) and v[0] == 'discard' and v[1] in range(0, 4))
         self.add_actuator('play-mend-card', False, lambda v: isinstance(v, bool))
         self.add_actuator('play-sabotage-card', False, lambda v: isinstance(v, bool))
@@ -29,8 +29,9 @@ class SaboteurAgent(Agent):
     def add_all_actions(self):
         for i in range(0, 20):
             for j in range(0, 20):
-                self.add_action('place-{0}-{1}'.format(i, j),
-                            lambda x=i, y=j: {'place-card': ('place', x, y)})
+                for k in range(0, 4):
+                    self.add_action('place-{0}-{1}-{2}'.format(i, j, k),
+                            lambda x=i, y=j, c=k: {'place-card': ('place', x, y, c)})
         for i in range(0, 4):
             self.add_action('discard-{0}'.format(i),
                             lambda v=i: {'discard-card': ('discard', v)})

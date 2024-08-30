@@ -25,6 +25,6 @@ if __name__ == '__main__':
         else:
             player = SaboteurAgent(i, saboteur_agent_program)
         players[i] = player
-        game_environment.add_player(player)
+        game_environment.add_player_cards(player, i)
 
     game = SaboteurGame(game_environment, players)

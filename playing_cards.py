@@ -41,6 +41,9 @@ class Card(ABC):
         self.is_special = False
         self.access_points = []
 
+    def __str__(self):
+        return f"Card(name={self.name})"
+
     def face_down(self):
         self.hidden = True
 
@@ -76,7 +79,7 @@ class TableCard(Card):
     def __init__(self, name):
         super().__init__()
         self.name = name
-        self.image = self.load_image(self.name)
+        self.image = self.load_image(Names.CROSS_SECTION)
 
     def load_image(self, name):
         image_paths = {
@@ -104,7 +107,122 @@ class TableCard(Card):
             Names.DE_WS: "images/cards/de_ws.png",
             Names.DE_W: "images/cards/de_w.png"
         }
-        return pygame.image.load(image_paths[name]).convert_alpha()
+        return pygame.image.load(image_paths[self.name]).convert_alpha()
+
+    def get_image(self):
+        return self.image
+
+class CrossSectionCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.CROSS_SECTION)
+        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
+        self.name = Names.CROSS_SECTION
+        self.image = self.load_image(self.name)
+
+class VerticalPathCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.VERTICAL_PATH)
+        self.access_points = [dirs.NORTH, dirs.SOUTH]
+        self.name = Names.VERTICAL_PATH
+        self.image = self.load_image(self.name)
+
+class HorizontalPathCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.HORIZONTAL_PATH)
+        self.access_points = [dirs.EAST, dirs.WEST]
+        self.name = Names.HORIZONTAL_PATH
+        self.image = self.load_image(self.name)
+
+class TurnLeftCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.TURN_LEFT)
+        self.access_points = [dirs.NORTH, dirs.EAST]
+        self.name = Names.TURN_LEFT
+        self.image = self.load_image(self.name)
+
+class TurnRightCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.TURN_RIGHT)
+        self.access_points = [dirs.NORTH, dirs.WEST]
+        self.name = Names.TURN_RIGHT
+        self.image = self.load_image(self.name)
+
+class VertTCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.VERT_T)
+        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST]
+        self.name = Names.VERT_T
+        self.image = self.load_image(self.name)
+
+class HorTCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.HOR_T)
+        self.access_points = [dirs.NORTH, dirs.EAST, dirs.WEST]
+        self.name = Names.HOR_T
+        self.image = self.load_image(self.name)
+
+class DEAllCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_ALL)
+        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
+        self.name = Names.DE_ALL
+        self.image = self.load_image(self.name)
+
+class DE3ECard(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_3_E)
+        self.access_points = [dirs.NORTH, dirs.EAST, dirs.WEST]
+        self.name = Names.DE_3_E
+        self.image = self.load_image(self.name)
+
+class DE3SCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_3_S)
+        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.WEST]
+        self.name = Names.DE_3_S
+        self.image = self.load_image(self.name)
+
+class DEEWCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_EW)
+        self.access_points = [dirs.EAST, dirs.WEST]
+        self.name = Names.DE_EW
+        self.image = self.load_image(self.name)
+
+class DENCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_N)
+        self.access_points = [dirs.NORTH]
+        self.name = Names.DE_N
+        self.image = self.load_image(self.name)
+
+class DENSCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_NS)
+        self.access_points = [dirs.NORTH, dirs.SOUTH]
+        self.name = Names.DE_NS
+        self.image = self.load_image(self.name)
+
+class DEWNCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_WN)
+        self.access_points = [dirs.NORTH, dirs.WEST]
+        self.name = Names.DE_WN
+        self.image = self.load_image(self.name)
+
+class DEWSCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_WS)
+        self.access_points = [dirs.SOUTH, dirs.WEST]
+        self.name = Names.DE_WS
+        self.image = self.load_image(self.name)
+
+class DEWCards(TableCard):
+    def __init__(self):
+        super().__init__(Names.DE_W)
+        self.access_points = [dirs.WEST]
+        self.name = Names.DE_W
+        self.image = self.load_image(self.name)
 
 class StartCard(TableCard):
     def __init__(self):

@@ -1,4 +1,4 @@
-
+import random
 
 def gold_digger_agent_program(percepts, actuators):
     actions = []
@@ -10,4 +10,11 @@ def gold_digger_agent_program(percepts, actuators):
         'player-cards': percepts['can-mine-sensor']
     }
 
-    return None
+    x = random.choice(range(20))
+    y = random.choice(range(20))
+
+    r = "place-{0}-{1}-0".format(x, y)
+
+    actions.append(r)
+
+    return actions
