@@ -408,7 +408,8 @@ class SaboteurGameEnvironment(GameEnvironment):
                     for r in range(20):
                         for c in range(20):
                             card_type = type(board[(r, c)])
-                            if card_type is not SpecialCard:
+                            specials = [(6, 10), (14, 8), (14, 10), (14, 12)]
+                            if card_type is not SpecialCard and (r, c) not in specials:
                                 legal_actions.append(f'dynamite-{r}-{c}-{i}')
                 else:
                     raise ValueError(f"Unknown action card {card.name}")

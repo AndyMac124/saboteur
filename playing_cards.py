@@ -64,7 +64,7 @@ class Card(ABC):
             Names.VERTICAL_PATH: [dirs.EAST, dirs.WEST],
             Names.HORIZONTAL_PATH: [dirs.NORTH, dirs.SOUTH],
             Names.TURN_LEFT: [dirs.NORTH, dirs.WEST],
-            Names.TURN_RIGHT: [dirs.SOUTH, dirs.EAST],
+            Names.TURN_RIGHT: [dirs.SOUTH, dirs.WEST],
             Names.VERT_T: [dirs.WEST, dirs.SOUTH, dirs.EAST],
             Names.HOR_T: [dirs.NORTH, dirs.EAST, dirs.SOUTH],
             Names.DE_ALL: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
