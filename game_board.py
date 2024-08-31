@@ -102,7 +102,7 @@ class GameBoard():
         }
         card_class = card_types.get(name.name, None)
         if card_class:
-            print(card_class)
+            #print(card_class)
             return card_class
         else:
             print("Card not found")

@@ -11,11 +11,12 @@ def saboteur_agent_program(percepts, actuators):
         'mining-state': percepts['can-mine-sensor'],
         'player-cards': percepts['cards-in-hand-sensor'],
         'reported-cards': percepts['reported-cards-sensor'],
-        'cards-played': percepts['cards-played-sensor']
+        'cards-played': percepts['cards-played-sensor'],
+        'deck-status': percepts['deck-status']
     }
 
     board = gs['game-board']
-    legal_moves = se.get_legal_actions
+    legal_moves = se.get_legal_actions_gs(gs)
 
     # Dictionary of cards played by each player
     # Dictionary of players and suspected saboteur

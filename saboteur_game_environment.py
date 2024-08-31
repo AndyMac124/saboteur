@@ -34,10 +34,11 @@ class SaboteurGameEnvironment(GameEnvironment):
         return {
             'game-board-sensor': game_state['game-board'],
             'turn-taking-indicator': game_state['player-turn'],
-            'can-mine-sensor': game_state['mining-state'][self._player_turn],
+            'can-mine-sensor': game_state['mining-state'],
             'cards-in-hand-sensor': game_state['player-cards'],
             'reported-cards-sensor': game_state['reported-cards'],
-            'cards-played-sensor': game_state['player-cards']
+            'deck-status': game_state['deck-status'],
+            'cards-played-sensor': game_state['played_cards']
         }
 
     def get_player(self, player_id):
@@ -52,9 +53,9 @@ class SaboteurGameEnvironment(GameEnvironment):
 
     def add_played_card(self, player_id, card):
         if player_id in self._played_cards:
-            self._played_cards[player_id].append(card)
+            self._played_cards[player_id].append(card.name)
         else:
-            self._played_cards[player_id] = [card]
+            self._played_cards[player_id] = [card.name]
 
     def get_game_state(self):
         game_state = {
@@ -62,9 +63,10 @@ class SaboteurGameEnvironment(GameEnvironment):
             'player-turn': self._player_turn,
             'mining-state': self._mining_states,
             'player-cards': self._players_cards[self._player_turn],
+            'deck-status': self._deck.is_empty(),
             'deck': self._deck,
             'reported-cards': self._reported_cards, # Dict of player_id and  tuple (goal_index, bool)
-            'players': self._played_cards # Dict of player_id and list of cards played
+            'played_cards': self._played_cards # Dict of player_id and list of cards played
         }
         return game_state
 
@@ -171,11 +173,11 @@ class SaboteurGameEnvironment(GameEnvironment):
 
         legal_actions = []
 
-        if not deck.is_empty():
-            legal_actions.append('draw')
+        #if not deck.is_empty():
+         #   legal_actions.append('draw')
 
         for i in range(len(player_cards)):
-            legal_actions.append(f'discard-card-{i}')
+            legal_actions.append(f'discard-{0}-{0}-{i}')
             card = player_cards[i]
             if type(card) is TableCard:
                 if self._mining_states[self._player_turn]:
@@ -191,13 +193,14 @@ class SaboteurGameEnvironment(GameEnvironment):
                 if card.name == Names.MAP:
                     # Could check if any are unknown
                     for j in range(3):
-                        legal_actions.append(f'map-{j}-{i}')
+                        for b in range(2):
+                            legal_actions.append(f'map-{j}-{b}-{i}')
                 elif card.name == Names.MEND:
                     for j in range(8):
-                        legal_actions.append(f'mend-{j}-{i}')
+                        legal_actions.append(f'mend-{0}-{j}-{i}')
                 elif card.name == Names.SABOTAGE:
                     for j in range(8):
-                        legal_actions.append(f'sabotage-{j}-{i}')
+                        legal_actions.append(f'sabotage-{0}-{j}-{i}')
                 elif card.name == Names.DYNAMITE:
                     for r in range(20):
                         for c in range(20):
@@ -209,6 +212,182 @@ class SaboteurGameEnvironment(GameEnvironment):
                     raise ValueError(f"Unknown action card {card.name}")
 
         return legal_actions
+
+
+
+
+
+
+
+    def get_legal_actions_gs(gs):
+
+        def is_connected_start(location, access):
+            seen = set()
+            return dfs(location, seen, access)
+
+        def dfs(location, seen, access=None):
+            if location == (6, 10):
+                return True
+
+            joins = {
+                dirs.NORTH: dirs.SOUTH,
+                dirs.SOUTH: dirs.NORTH,
+                dirs.EAST: dirs.WEST,
+                dirs.WEST: dirs.EAST,
+            }
+
+            seen.add(location)
+            n, e, s, w = get_surrounding(location)
+
+            for next_location in (n, e, s, w):
+                if is_within_bounds(next_location) and next_location not in seen and board[next_location] is not None:
+                    if type(board[next_location]) is not DeadEndCard:
+                        next_access = board[next_location].get_access_points()
+                        if access is None:
+                            access = board[location].get_access_points()
+                        for n in next_access:
+                            if joins[n] in access:
+                                if dfs(next_location, seen):
+                                    return True
+
+            return False
+
+        def is_within_bounds(location):
+            x, y = location
+            return 0 <= x < 20 and 0 <= y < 20
+
+        def get_surrounding(location):
+            x, y = location
+            n = (x, y-1)
+            e = (x+1, y)
+            s = (x, y+1)
+            w = (x-1, y)
+            return n, e, s, w
+
+        def is_valid_placement_gs(game_board, col, row, card, flipped=False):
+            if flipped:
+                access = Card.static_access_points(card.name, flipped=True)
+            else:
+                access = Card.static_access_points(card.name)
+
+            if not is_connected_start((r, c), access):
+                return False
+
+            paths = 0
+
+            if col > 0:
+                W = (game_board[col - 1, row] is not None)
+            else:
+                W = False
+
+            if row > 0:
+                N = (game_board[col, row - 1] is not None)
+            else:
+                N = False
+
+            if col < 19:
+                E = (game_board[col + 1, row] is not None)
+            else:
+                E = False
+
+            if row < 19:
+                S = (game_board[col, row + 1] is not None)
+            else:
+                S = False
+
+            if N:
+                n_card = game_board[col, row - 1]
+                n_card_access = n_card.get_access_points()
+                if dirs.SOUTH in n_card_access:
+                    if dirs.NORTH in access:
+                        if type(n_card) is not DeadEndCard:
+                            paths += 1
+                    else:
+                        return False
+
+            if E:
+                e_card = game_board[col + 1, row]
+                e_card_access = e_card.get_access_points()
+                if dirs.WEST in e_card_access:
+                    if dirs.EAST in access:
+                        if type(e_card) is not DeadEndCard:
+                            paths += 1
+                    else:
+                        return False
+
+            if S:
+                s_card = game_board[col, row + 1]
+                s_card_access = s_card.get_access_points()
+                if dirs.NORTH in s_card_access:
+                    if dirs.SOUTH in access:
+                        if type(s_card) is not DeadEndCard:
+                            paths += 1
+                    else:
+                        return False
+
+            if W:
+                w_card = game_board[col - 1, row]
+                w_card_access = w_card.get_access_points()
+                if dirs.EAST in w_card_access:
+                    if dirs.WEST in access:
+                        if type(w_card) is not DeadEndCard:
+                            paths += 1
+                    else:
+                        return False
+
+            return True
+
+        board = gs['game-board']
+        player = gs['player-turn']
+        ms = gs['mining-state']
+        mining = ms[player]
+        player_cards = gs['player-cards']
+
+        legal_actions = []
+
+        for i in range(len(player_cards)):
+            legal_actions.append(f'discard-{0}-{0}-{i}')
+            card = player_cards[i]
+            #print(f"CARDDDDDDD: {card}")
+            if type(card) is TableCard:
+                if mining:
+                    for r in range(20):
+                        for c in range(20):
+                            if board[(r, c)] is None:
+                                if is_valid_placement_gs(board, c, r, card):
+                                    legal_actions.append(f'place-{r}-{c}-{i}')
+                                if is_valid_placement_gs(board, c, r, card, flipped=True):
+                                    legal_actions.append(f'rotate-{r}-{c}-{i}')
+
+            elif type(card) is ActionCard:
+                if card.name == Names.MAP:
+                    # Could check if any are unknown
+                    for j in range(3):
+                        for b in range(2):
+                            legal_actions.append(f'map-{j}-{b}-{i}')
+                elif card.name == Names.MEND:
+                    for j in range(8):
+                        legal_actions.append(f'mend-{0}-{j}-{i}')
+                elif card.name == Names.SABOTAGE:
+                    for j in range(8):
+                        legal_actions.append(f'sabotage-{0}-{j}-{i}')
+                elif card.name == Names.DYNAMITE:
+                    for r in range(20):
+                        for c in range(20):
+                            # Unless we want to restrict dynamite to actual use.
+                            card_type = type(board[(r, c)])
+                            if card_type is not SpecialCard:
+                                legal_actions.append(f'dynamite-{r}-{c}-{i}')
+                else:
+                    raise ValueError(f"Unknown action card {card.name}")
+
+        return legal_actions
+
+
+
+
+
+
 
     def _change_player_turn(self):
         self._player_turn = (self._player_turn + 1) % len(self._players)
@@ -254,12 +433,12 @@ class SaboteurGameEnvironment(GameEnvironment):
             self.add_played_card(player_turn, card)
             new_gs['player-cards'].remove(card)
         elif action.startswith('discard'):
-            _, index = action.split('-')
+            _, _, _, index = action.split('-')
             card_index = int(index)
             card = self._players_cards[player_turn][card_index]
             new_gs['player-cards'].remove(card)
         elif action.startswith('mend'):
-            _, p, z = action.split('-')
+            _, _, p, z = action.split('-')
             card_index = int(z)
             if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
@@ -268,7 +447,7 @@ class SaboteurGameEnvironment(GameEnvironment):
             self.add_played_card(player_turn, card)
             self._mining_states[int(p)] = True
         elif action.startswith('sabotage'):
-            _, p, z = action.split('-')
+            _, _, p, z = action.split('-')
             card_index = int(z)
             if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
@@ -314,24 +493,21 @@ class SaboteurGameEnvironment(GameEnvironment):
         # print(f"Player Turn: {self._player_turn}")
 
         legal_actions = self.get_legal_actions()
-        print(f"Legal Actions: {legal_actions}")
+        #print(f"Legal Actions: {legal_actions}")
 
-        rotate = agent_actuators['rotate-card']
         handling_type, x, y, z = agent_actuators['play-card']
-        # print(rotate)
         action = None
 
-        if handling_type == 'place':
-            if rotate:
-                action = 'rotate-{0}-{1}-{2}'.format(x, y, z)
-            else:
-                action = 'place-{0}-{1}-{2}'.format(x, y, z)
+        if handling_type == 'rotate':
+            action = 'rotate-{0}-{1}-{2}'.format(x, y, z)
+        elif handling_type == 'place':
+            action = 'place-{0}-{1}-{2}'.format(x, y, z)
         elif handling_type == 'discard':
-            action = 'discard-{0}'.format(z)
+            action = 'discard-{0}-{1}-{2}'.format(0, 0, z)
         elif handling_type == 'mend':
-            action = 'mend-{0}-{1}'.format(x, z)
+            action = 'mend-{0}-{1}-{2}'.format(0, x, z)
         elif handling_type == 'sabotage':
-            action = 'sabotage-{0}-{1}'.format(x, z)
+            action = 'sabotage-{0}-{1}-{2}'.format(0, x, z)
         elif handling_type == 'map':
             action = 'map-{0}-{1}-{2}'.format(x, y, z)
         elif handling_type == 'dynamite':

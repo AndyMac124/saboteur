@@ -78,7 +78,7 @@ class SaboteurGame:
 
         # THINK
         actions = self._agents[cur_type].think()
-        print(actions)
+        #print(actions)
 
         # ACT
         self._agents[cur_type].act(actions, self._environment)

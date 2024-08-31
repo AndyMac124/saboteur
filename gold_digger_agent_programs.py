@@ -11,11 +11,13 @@ def gold_digger_agent_program(percepts, actuators):
         'mining-state': percepts['can-mine-sensor'],
         'player-cards': percepts['cards-in-hand-sensor'],
         'reported-cards': percepts['reported-cards-sensor'],
-        'cards-played': percepts['cards-played-sensor']
+        'cards-played': percepts['cards-played-sensor'],
+        'deck': percepts['deck-status']
     }
 
     board = gs['game-board']
-    legal_moves = se.get_legal_actions(gs)
+    legal_moves = se.get_legal_actions_gs(gs)
+
     # Dictionary of cards played by each player
     # Dictionary of players and suspected saboteur
     # List of all possible cards, remove what is on the board
@@ -42,6 +44,8 @@ def gold_digger_agent_program(percepts, actuators):
 
 
     move = random.choice(legal_moves)
+
+    print(move)
 
     actions.append(move)
 
