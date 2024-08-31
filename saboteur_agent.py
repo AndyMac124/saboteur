@@ -13,10 +13,11 @@ class SaboteurAgent(Agent):
         self.add_sensor('turn-taking-indicator', 0, lambda n: n in range(0, 8))
         self.add_sensor('cards-in-hand-sensor', [], lambda m: all(isinstance(opt, TableCard) or isinstance(opt, ActionCard) or opt is None for opt in m))
         self.add_sensor('can-mine-sensor', [], lambda v: all(isinstance(b, bool) for b in v))
-        self.add_sensor('reported-cards-sensor', {}, lambda v: all(isinstance(k, tuple) and len(k) == 2 and all(isinstance(i, int) for i in k) and isinstance(val, bool) for k, val in v.items()))
+        self.add_sensor('reported-cards-sensor',{}, lambda v: isinstance(v, dict) and all(isinstance(k, int) and isinstance(val, tuple) and len(val) == 2 and (val[0] is None or isinstance(val[0], Card)) and isinstance(val[1], bool) for k, val in v.items()))
         self.add_sensor('cards-played-sensor', {}, lambda v: all(isinstance(k, int) and isinstance(v[k], list) and all(isinstance(c, Names) for c in v[k]) for k in v))
         self.add_sensor('deck-status', False, lambda v: isinstance(v, bool))
         self.add_sensor('flipped-cards-sensor', [], lambda v: all(isinstance(c, tuple) for c in v))
+        self.add_sensor('known-cards-sensor', [[None, None, None] for _ in range(8)], lambda v: isinstance(v, list) and len(v) == 8 and all(isinstance(c, list) and len(c) == 3 and all(isinstance(i, (bool, type(None))) for i in c) for c in v))
 
     def add_all_actuators(self):
         # place, x, y, card
@@ -25,10 +26,9 @@ class SaboteurAgent(Agent):
         # sabotage, player, *, card
         # map, index, *, card
         self.add_actuator('play-card', ('place', 0, 0, 0),
-                          lambda v: isinstance(v, tuple) and v[0] in ['place', 'discard', 'mend', 'sabotage', 'map', 'dynamite', 'rotate'] and v[1] in range(0, 20)
+                          lambda v: isinstance(v, tuple) and v[0] in ['place', 'discard', 'mend', 'sabotage', 'map', 'dynamite', 'rotate', 'pass'] and v[1] in range(0, 20)
                                     and isinstance(v[1], int) and v[2] in range(0, 20)
                                     and isinstance(v[2], int) and (isinstance(v[3], int)) and v[3] in range(0, 4))
-        #self.add_actuator('rotate-card', False, lambda v: isinstance(v, bool))
 
     def add_all_actions(self):
         for i in range(0, 20):
@@ -36,6 +36,8 @@ class SaboteurAgent(Agent):
                 for k in range(0, 4):
                     self.add_action('place-{0}-{1}-{2}'.format(i, j, k),
                             lambda x=i, y=j, c=k: {'play-card': ('place', x, y, c)})
+                    self.add_action('pass-{0}-{1}-{2}'.format(i, j, k),
+                                    lambda x=i, y=j, c=k: {'play-card': ('pass', x, y, c)})
                     self.add_action('rotate-{0}-{1}-{2}'.format(i, j, k),
                                     lambda x=i, y=j, c=k: {'play-card': ('rotate', x, y, c)})
                     self.add_action('dynamite-{0}-{1}-{2}'.format(i, j, k), lambda x=i, y=j, c=k: {'play-card': ('dynamite', x, y, c)})

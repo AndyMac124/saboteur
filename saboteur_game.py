@@ -11,7 +11,7 @@ GREEN = (255, 125, 125)
 
 DISPLAY_WIDTH = 1120
 DISPLAY_HEIGHT = 800
-INFO_BAR_HEIGHT = 35
+INFO_BAR_HEIGHT = 55
 CARD_WIDTH = 56
 CARD_HEIGHT = 40
 
@@ -116,8 +116,16 @@ class SaboteurGame:
         else:
             gs = self._environment.get_game_state()
             player_turn = gs['player-turn']
+            player_cards = gs['player-cards']
+            self._display.fill(BLACK, (0, self._display_size[1], self._display_size[0], INFO_BAR_HEIGHT))  # Clear the text area
             self._draw_text("Player Turn: {0}".format(player_turn), 10, 'left', 'bottom', 15)
+            x_pos = 200  # Initial x position with padding from the left edge
+            y_pos = self._display_size[1] + 10  # Position just above the info bar
 
+            for i in range(len(player_cards)):
+                card = player_cards[i]
+                self._display.blit(card.image, (x_pos, y_pos))
+                x_pos += self._card_size[0] + 10  # Update x position for the next card
 
     def main(self):
         running = True

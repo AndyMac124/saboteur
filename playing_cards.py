@@ -98,6 +98,17 @@ class ActionCard(Card):
     def __init__(self, name):
         super().__init__()
         self.name = name
+        self.image = self.load_action(self.name)
+
+    def load_action(self, name):
+        image_paths = {
+            Names.GOAL: "images/cards/goal.png",
+            Names.MAP: "images/cards/map.png",
+            Names.SABOTAGE: "images/cards/sabotage.png",
+            Names.MEND: "images/cards/mend.png",
+            Names.DYNAMITE: "images/cards/dynamite.png",
+        }
+        return pygame.image.load(image_paths[self.name]).convert_alpha()
 
 class TableCard(Card):
     def __init__(self, name):

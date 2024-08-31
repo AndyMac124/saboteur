@@ -17,8 +17,9 @@ class SaboteurGameEnvironment(GameEnvironment):
         self._mining_states = [True] * 8
         self._players_cards: List[List[Optional[Card]]] = [[] for _ in range(8)]
         self._deck = Deck()
-        self._reported_cards = {}
+        self._reported_cards = {i: (None, False) for i in range(8)}
         self._played_cards = {}
+        self._known_cards = [[None, None, None] for _ in range(8)]
 
     def add_player(self, player):
         self._players.append(player)
@@ -40,7 +41,8 @@ class SaboteurGameEnvironment(GameEnvironment):
             'reported-cards-sensor': game_state['reported-cards'],
             'deck-status': game_state['deck-status'],
             'cards-played-sensor': game_state['played_cards'],
-            'flipped-cards-sensor': game_state['flipped_cards']
+            'flipped-cards-sensor': game_state['flipped_cards'],
+            'known-cards-sensor': game_state['known_cards']
         }
 
     def get_player(self, player_id):
@@ -69,7 +71,8 @@ class SaboteurGameEnvironment(GameEnvironment):
             'deck': self._deck,
             'reported-cards': self._reported_cards, # Dict of player_id and  tuple (goal_index, bool)
             'played_cards': self._played_cards, # Dict of player_id and list of cards played
-            'flipped_cards': self._game_board.get_flipped_cards()
+            'flipped_cards': self._game_board.get_flipped_cards(),
+            'known_cards': self._known_cards
         }
         return game_state
 
@@ -94,9 +97,11 @@ class SaboteurGameEnvironment(GameEnvironment):
 
     def is_terminal(self):
         if self._deck.is_empty():
-            for player in self._players:
-                if not player.has_legal_moves():
-                    return True
+            for i in range(8):
+                pc = self._players_cards
+                if pc[i] is not []:
+                    return False
+            return True
         return False
 
     def is_valid_placement(self, game_board, col, row, card, flipped=False):
@@ -302,12 +307,6 @@ class SaboteurGameEnvironment(GameEnvironment):
                 else:
                     next_a = Card.static_access_points(board[n].name)
                 if (dirs.SOUTH in next_a) and dirs.NORTH in access:
-                    print(f"ACCESS POINTS FOR A {card.name} which is {flipped}")
-                    for a in access:
-                        print(a)
-                    print(f"SUCCESS POINTS FOR A {board[n].name} which is {n in flipped_cards}")
-                    for b in next_a:
-                        print(b)
                     if type(game_board[n]) is not DeadEndCard:
                         paths += 1
                 else:
@@ -319,12 +318,6 @@ class SaboteurGameEnvironment(GameEnvironment):
                 else:
                     next_a = Card.static_access_points(board[e].name)
                 if (dirs.WEST in next_a) and dirs.EAST in access:
-                    print(f"ACCESS POINTS FOR E {card.name} which is {flipped}")
-                    for a in access:
-                        print(a)
-                    print(f"SUCCESS POINTS FOR E {board[e].name} which is {e in flipped_cards}")
-                    for b in next_a:
-                        print(b)
                     if type(game_board[e]) is not DeadEndCard:
                         paths += 1
                 else:
@@ -336,12 +329,6 @@ class SaboteurGameEnvironment(GameEnvironment):
                 else:
                     next_a = Card.static_access_points(board[s].name)
                 if (dirs.NORTH in next_a) and dirs.SOUTH in access:
-                    print(f"ACCESS POINTS FOR S {card.name} which is {flipped}")
-                    for a in access:
-                        print(a)
-                    print(f"SUCCESS POINTS FOR S {board[s].name} which is {s in flipped_cards}")
-                    for b in next_a:
-                        print(b)
                     if type(game_board[s]) is not DeadEndCard:
                         paths += 1
                 else:
@@ -353,12 +340,6 @@ class SaboteurGameEnvironment(GameEnvironment):
                 else:
                     next_a = Card.static_access_points(board[w].name)
                 if (dirs.EAST in next_a) and dirs.WEST in access:
-                    print(f"ACCESS POINTS FOR W {card.name} which is {flipped}")
-                    for a in access:
-                        print(a)
-                    print(f"SUCCESS POINTS FOR W {board[w].name} which is {w in flipped_cards}")
-                    for b in next_a:
-                        print(b)
                     if type(game_board[w]) is not DeadEndCard:
                         paths += 1
                 else:
@@ -384,12 +365,8 @@ class SaboteurGameEnvironment(GameEnvironment):
                         for c in range(20):
                             if board[(r, c)] is None:
                                 if is_valid_placement_gs(board, c, r, card, flipped_cards):
-                                    print(f"SUCCESS SEARCH, {r}, {c}")
-                                    print(card)
                                     legal_actions.append(f'place-{r}-{c}-{i}')
                                 if is_valid_placement_gs(board, c, r, card, flipped_cards, flipped=True):
-                                    print(f"SUCCESS FLIPPED SEARCH, {r}, {c}")
-                                    print(card)
                                     legal_actions.append(f'rotate-{r}-{c}-{i}')
 
             elif type(card) is ActionCard:
@@ -422,7 +399,7 @@ class SaboteurGameEnvironment(GameEnvironment):
 
     def _report_card(self, player_id, is_gold, index):
         # Dict of player_id and  tuple (goal_index, bool)
-        self._reported_cards[(player_id, index)] = is_gold
+        self._reported_cards[player_id] = (index, is_gold)
 
 
     def transition_result(self, game_state, action):
@@ -433,12 +410,14 @@ class SaboteurGameEnvironment(GameEnvironment):
             'mining-state': self._mining_states,
             'player-cards': self._players_cards[self._player_turn],
             'reported-cards': self._reported_cards,
-            'played-cards': self._played_cards
+            'played-cards': self._played_cards,
+            'known_cards': self._known_cards,
+            'deck-status': self._deck.is_empty(),
+            'deck': self._deck,
+            'flipped_cards': self._game_board.get_flipped_cards(),
         }
 
         player_turn = game_state['player-turn']
-
-        print(f"ACTION: {action}")
 
         if action.startswith('place'):
             _, x, y, z = action.split('-')
@@ -493,7 +472,7 @@ class SaboteurGameEnvironment(GameEnvironment):
             if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
                 raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
             card = self._players_cards[player_turn][card_index]
-            self._game_board.add_path_card(row, col, card)
+            self._game_board.remove_path_card(row, col)
             self.add_played_card(player_turn, card)
             new_gs['player-cards'].remove(card)
         elif action.startswith('map'):
@@ -505,6 +484,7 @@ class SaboteurGameEnvironment(GameEnvironment):
             self.add_played_card(player_turn, card)
             new_gs['player-cards'].remove(card)
             card = self._game_board.peak_goal_card(int(index))
+            self._known_cards[player_turn] = card
             if y == 0:
                 # Reveal Truth
                 self._report_card(player_turn, card, int(index))
@@ -512,22 +492,24 @@ class SaboteurGameEnvironment(GameEnvironment):
                 # Reveal Lie
                 self._report_card(player_turn, not card, int(index))
 
-        new_card = self._deck.draw()
-        new_gs['player-cards'].append(new_card)
+        if not new_gs['deck-status']:
+            new_card = self._deck.draw()
+            new_gs['player-cards'].append(new_card)
         new_gs['player-turn'] = (player_turn + 1) % len(self._players)
 
         return new_gs
 
     def state_transition(self, agent_actuators):
         game_state = self.get_game_state()
-        # print(f"Player Turn: {self._player_turn}")
-
-        legal_actions = self.get_legal_actions()
 
         handling_type, x, y, z = agent_actuators['play-card']
         action = None
 
-        if handling_type == 'rotate':
+        if handling_type == 'pass':
+            new_state = game_state
+            new_state['player-turn'] = (self._player_turn + 1) % len(self._players)
+            self._player_turn = new_state['player-turn']
+        elif handling_type == 'rotate':
             action = 'rotate-{0}-{1}-{2}'.format(x, y, z)
         elif handling_type == 'place':
             action = 'place-{0}-{1}-{2}'.format(x, y, z)

@@ -17,7 +17,21 @@ def saboteur_agent_program(percepts, actuators):
     }
 
     board = gs['game-board']
+    cards = gs['player-cards']
+    player = gs['player-turn']
+    mining = gs['mining-state']
+    reported = gs['reported-cards']
+    cards_player = gs['player-cards']
+    deck = gs['deck-status']
+
     legal_moves = se.get_legal_actions_gs(gs)
+
+    if len(cards) == 0 or len(legal_moves) == 0:
+        move = ('pass', 0, 0, 0)
+        actions.append(move)
+        return actions
+
+
 
     # Dictionary of cards played by each player
     # Dictionary of players and suspected saboteur
@@ -37,6 +51,7 @@ def saboteur_agent_program(percepts, actuators):
     # If player suspected of being Saboteur, we will play Sabotage on them
 
     # If player suspected of being GoldDigger, and player is not mining, play mend on them
+
 
 
 
