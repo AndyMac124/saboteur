@@ -12,7 +12,8 @@ def saboteur_agent_program(percepts, actuators):
         'player-cards': percepts['cards-in-hand-sensor'],
         'reported-cards': percepts['reported-cards-sensor'],
         'cards-played': percepts['cards-played-sensor'],
-        'deck-status': percepts['deck-status']
+        'deck-status': percepts['deck-status'],
+        'flipped-cards': percepts['flipped-cards-sensor']
     }
 
     board = gs['game-board']

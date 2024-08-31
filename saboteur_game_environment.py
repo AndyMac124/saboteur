@@ -1,4 +1,5 @@
 import random
+from abc import abstractmethod
 
 from typing import Dict, List, Optional
 from playing_cards import Card, DeadEndCard, TableCard, ActionCard, GoalCard, GoldCard, StartCard, Names, SpecialCard, dirs
@@ -38,7 +39,8 @@ class SaboteurGameEnvironment(GameEnvironment):
             'cards-in-hand-sensor': game_state['player-cards'],
             'reported-cards-sensor': game_state['reported-cards'],
             'deck-status': game_state['deck-status'],
-            'cards-played-sensor': game_state['played_cards']
+            'cards-played-sensor': game_state['played_cards'],
+            'flipped-cards-sensor': game_state['flipped_cards']
         }
 
     def get_player(self, player_id):
@@ -66,7 +68,8 @@ class SaboteurGameEnvironment(GameEnvironment):
             'deck-status': self._deck.is_empty(),
             'deck': self._deck,
             'reported-cards': self._reported_cards, # Dict of player_id and  tuple (goal_index, bool)
-            'played_cards': self._played_cards # Dict of player_id and list of cards played
+            'played_cards': self._played_cards, # Dict of player_id and list of cards played
+            'flipped_cards': self._game_board.get_flipped_cards()
         }
         return game_state
 
@@ -166,15 +169,12 @@ class SaboteurGameEnvironment(GameEnvironment):
 
         return True
 
+
     def get_legal_actions(self):
         player_cards = self._players_cards[self._player_turn]
-        deck = self._deck
         board = self._game_board.get_board()
 
         legal_actions = []
-
-        #if not deck.is_empty():
-         #   legal_actions.append('draw')
 
         for i in range(len(player_cards)):
             legal_actions.append(f'discard-{0}-{0}-{i}')
@@ -215,41 +215,60 @@ class SaboteurGameEnvironment(GameEnvironment):
 
 
 
-
-
-
-
+    @staticmethod
     def get_legal_actions_gs(gs):
 
-        def is_connected_start(location, access):
+        def is_connected_start(location, access, flipped_cards):
             seen = set()
-            return dfs(location, seen, access)
+            return dfs(location, seen, access, flipped_cards)
 
-        def dfs(location, seen, access=None):
-            if location == (6, 10):
+        def dfs(location, seen, access, flipped_cards):
+            # If we've reached the start card, return True
+            if location == (6, 10): # Assuming (6, 10) is the location of the start card
                 return True
 
-            joins = {
-                dirs.NORTH: dirs.SOUTH,
-                dirs.SOUTH: dirs.NORTH,
-                dirs.EAST: dirs.WEST,
-                dirs.WEST: dirs.EAST,
+            DECards = {
+                Names.DE_ALL,
+                Names.DE_W,
+                Names.DE_N,
+                Names.DE_NS,
+                Names.DE_WS,
+                Names.DE_WN,
+                Names.DE_EW,
+                Names.DE_3_S,
+                Names.DE_3_E
             }
 
             seen.add(location)
             n, e, s, w = get_surrounding(location)
 
-            for next_location in (n, e, s, w):
-                if is_within_bounds(next_location) and next_location not in seen and board[next_location] is not None:
-                    if type(board[next_location]) is not DeadEndCard:
-                        next_access = board[next_location].get_access_points()
-                        if access is None:
-                            access = board[location].get_access_points()
-                        for n in next_access:
-                            if joins[n] in access:
-                                if dfs(next_location, seen):
-                                    return True
-
+            for char in (n, e, s, w):
+                if is_within_bounds(char) and char not in seen and board[char] is not None:
+                    if (board[char].name not in DECards) and (type(board[char]) is not GoalCard) and board[char].name is not Names.DYNAMITE:
+                        if char in flipped_cards:
+                            next_access = Card.static_access_points(board[char].name, flipped=True)
+                        else:
+                            next_access = board[char].get_access_points()
+                        if char is n:
+                            if dirs.SOUTH in next_access:
+                                if dirs.NORTH in access:
+                                    if dfs(char, seen, next_access, flipped_cards):
+                                        return True
+                        elif char is e:
+                            if dirs.WEST in next_access:
+                                if dirs.EAST in access:
+                                    if dfs(char, seen, next_access, flipped_cards):
+                                        return True
+                        elif char is s:
+                            if dirs.NORTH in next_access:
+                                if dirs.SOUTH in access:
+                                    if dfs(char, seen, next_access, flipped_cards):
+                                        return True
+                        elif char is w:
+                            if dirs.EAST in next_access:
+                                if dirs.WEST in access:
+                                    if dfs(char, seen, next_access, flipped_cards):
+                                        return True
             return False
 
         def is_within_bounds(location):
@@ -258,105 +277,119 @@ class SaboteurGameEnvironment(GameEnvironment):
 
         def get_surrounding(location):
             x, y = location
-            n = (x, y-1)
-            e = (x+1, y)
-            s = (x, y+1)
-            w = (x-1, y)
+            n = (x-1, y)
+            e = (x, y+1)
+            s = (x+1, y)
+            w = (x, y-1)
             return n, e, s, w
 
-        def is_valid_placement_gs(game_board, col, row, card, flipped=False):
+        def is_valid_placement_gs(game_board, col, row, card, flipped_cards, flipped=False):
             if flipped:
                 access = Card.static_access_points(card.name, flipped=True)
             else:
                 access = Card.static_access_points(card.name)
 
-            if not is_connected_start((r, c), access):
+            if not is_connected_start((row, col), access, flipped_cards):
                 return False
 
+            loc = (row, col)
+            n, e, s, w = get_surrounding(loc)
             paths = 0
 
-            if col > 0:
-                W = (game_board[col - 1, row] is not None)
-            else:
-                W = False
+            if is_within_bounds(n) and board[n] is not None:
+                if n in flipped_cards:
+                    next_a = Card.static_access_points(board[n].name, flipped=True)
+                else:
+                    next_a = Card.static_access_points(board[n].name)
+                if (dirs.SOUTH in next_a) and dirs.NORTH in access:
+                    print(f"ACCESS POINTS FOR A {card.name} which is {flipped}")
+                    for a in access:
+                        print(a)
+                    print(f"SUCCESS POINTS FOR A {board[n].name} which is {n in flipped_cards}")
+                    for b in next_a:
+                        print(b)
+                    if type(game_board[n]) is not DeadEndCard:
+                        paths += 1
+                else:
+                    return False
 
-            if row > 0:
-                N = (game_board[col, row - 1] is not None)
-            else:
-                N = False
+            if is_within_bounds(e) and board[e] is not None:
+                if e in flipped_cards:
+                    next_a = Card.static_access_points(board[e].name, flipped=True)
+                else:
+                    next_a = Card.static_access_points(board[e].name)
+                if (dirs.WEST in next_a) and dirs.EAST in access:
+                    print(f"ACCESS POINTS FOR E {card.name} which is {flipped}")
+                    for a in access:
+                        print(a)
+                    print(f"SUCCESS POINTS FOR E {board[e].name} which is {e in flipped_cards}")
+                    for b in next_a:
+                        print(b)
+                    if type(game_board[e]) is not DeadEndCard:
+                        paths += 1
+                else:
+                    return False
 
-            if col < 19:
-                E = (game_board[col + 1, row] is not None)
-            else:
-                E = False
+            if is_within_bounds(s) and board[s] is not None:
+                if s in flipped_cards:
+                    next_a = Card.static_access_points(board[s].name, flipped=True)
+                else:
+                    next_a = Card.static_access_points(board[s].name)
+                if (dirs.NORTH in next_a) and dirs.SOUTH in access:
+                    print(f"ACCESS POINTS FOR S {card.name} which is {flipped}")
+                    for a in access:
+                        print(a)
+                    print(f"SUCCESS POINTS FOR S {board[s].name} which is {s in flipped_cards}")
+                    for b in next_a:
+                        print(b)
+                    if type(game_board[s]) is not DeadEndCard:
+                        paths += 1
+                else:
+                    return False
 
-            if row < 19:
-                S = (game_board[col, row + 1] is not None)
-            else:
-                S = False
+            if is_within_bounds(w) and board[w] is not None:
+                if w in flipped_cards:
+                    next_a = Card.static_access_points(board[w].name, flipped=True)
+                else:
+                    next_a = Card.static_access_points(board[w].name)
+                if (dirs.EAST in next_a) and dirs.WEST in access:
+                    print(f"ACCESS POINTS FOR W {card.name} which is {flipped}")
+                    for a in access:
+                        print(a)
+                    print(f"SUCCESS POINTS FOR W {board[w].name} which is {w in flipped_cards}")
+                    for b in next_a:
+                        print(b)
+                    if type(game_board[w]) is not DeadEndCard:
+                        paths += 1
+                else:
+                    return False
 
-            if N:
-                n_card = game_board[col, row - 1]
-                n_card_access = n_card.get_access_points()
-                if dirs.SOUTH in n_card_access:
-                    if dirs.NORTH in access:
-                        if type(n_card) is not DeadEndCard:
-                            paths += 1
-                    else:
-                        return False
-
-            if E:
-                e_card = game_board[col + 1, row]
-                e_card_access = e_card.get_access_points()
-                if dirs.WEST in e_card_access:
-                    if dirs.EAST in access:
-                        if type(e_card) is not DeadEndCard:
-                            paths += 1
-                    else:
-                        return False
-
-            if S:
-                s_card = game_board[col, row + 1]
-                s_card_access = s_card.get_access_points()
-                if dirs.NORTH in s_card_access:
-                    if dirs.SOUTH in access:
-                        if type(s_card) is not DeadEndCard:
-                            paths += 1
-                    else:
-                        return False
-
-            if W:
-                w_card = game_board[col - 1, row]
-                w_card_access = w_card.get_access_points()
-                if dirs.EAST in w_card_access:
-                    if dirs.WEST in access:
-                        if type(w_card) is not DeadEndCard:
-                            paths += 1
-                    else:
-                        return False
-
-            return True
+            return (paths > 0)
 
         board = gs['game-board']
         player = gs['player-turn']
         ms = gs['mining-state']
         mining = ms[player]
         player_cards = gs['player-cards']
+        flipped_cards = gs['flipped-cards']
 
         legal_actions = []
 
         for i in range(len(player_cards)):
             legal_actions.append(f'discard-{0}-{0}-{i}')
             card = player_cards[i]
-            #print(f"CARDDDDDDD: {card}")
             if type(card) is TableCard:
                 if mining:
                     for r in range(20):
                         for c in range(20):
                             if board[(r, c)] is None:
-                                if is_valid_placement_gs(board, c, r, card):
+                                if is_valid_placement_gs(board, c, r, card, flipped_cards):
+                                    print(f"SUCCESS SEARCH, {r}, {c}")
+                                    print(card)
                                     legal_actions.append(f'place-{r}-{c}-{i}')
-                                if is_valid_placement_gs(board, c, r, card, flipped=True):
+                                if is_valid_placement_gs(board, c, r, card, flipped_cards, flipped=True):
+                                    print(f"SUCCESS FLIPPED SEARCH, {r}, {c}")
+                                    print(card)
                                     legal_actions.append(f'rotate-{r}-{c}-{i}')
 
             elif type(card) is ActionCard:
@@ -374,18 +407,12 @@ class SaboteurGameEnvironment(GameEnvironment):
                 elif card.name == Names.DYNAMITE:
                     for r in range(20):
                         for c in range(20):
-                            # Unless we want to restrict dynamite to actual use.
                             card_type = type(board[(r, c)])
                             if card_type is not SpecialCard:
                                 legal_actions.append(f'dynamite-{r}-{c}-{i}')
                 else:
                     raise ValueError(f"Unknown action card {card.name}")
-
         return legal_actions
-
-
-
-
 
 
 
@@ -409,6 +436,8 @@ class SaboteurGameEnvironment(GameEnvironment):
         }
 
         player_turn = game_state['player-turn']
+
+        print(f"ACTION: {action}")
 
         if action.startswith('place'):
             _, x, y, z = action.split('-')
@@ -493,7 +522,6 @@ class SaboteurGameEnvironment(GameEnvironment):
         # print(f"Player Turn: {self._player_turn}")
 
         legal_actions = self.get_legal_actions()
-        #print(f"Legal Actions: {legal_actions}")
 
         handling_type, x, y, z = agent_actuators['play-card']
         action = None

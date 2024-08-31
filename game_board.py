@@ -133,10 +133,11 @@ class GameBoard():
         #assert x >= 0 and x < 20, "The x coordinate must be 0 <= x < 20"
         #assert y >= 0 and y < 20, "The y coordinate must be 0 <= y < 20"
         #assert self._board.get_item_value(x, y) is None, "There is already another card on the board at coordinates ({0}, {1})".format(x, y)
-        surrounds = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
-        for loc in surrounds:
-            if loc in self.goal_locations:
-                self.flip_goal_card(loc)
+        if not card_name == Names.DYNAMITE:
+            surrounds = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+            for loc in surrounds:
+                if loc in self.goal_locations:
+                    self.flip_goal_card(loc)
 
         self._board[(x, y)] = self.create_card(card_name)
 
@@ -146,10 +147,11 @@ class GameBoard():
         #assert y >= 0 and y < 20, "The y coordinate must be 0 <= y < 20"
         #assert self._board.get_item_value(x, y) is None, "There is already another card on the board at coordinates ({0}, {1})".format(x, y)
 
-        surrounds = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
-        for loc in surrounds:
-            if loc in self.goal_locations:
-                self.flip_goal_card(loc)
+        if not card_name == Names.DYNAMITE:
+            surrounds = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+            for loc in surrounds:
+                if loc in self.goal_locations:
+                    self.flip_goal_card(loc)
 
         self._flippedCards.append((x, y))
         if (x, y) in self.goal_locations:

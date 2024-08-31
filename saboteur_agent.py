@@ -2,7 +2,6 @@ from une_ai.models import Agent
 from typing import Dict, Tuple, Optional
 from playing_cards import TableCard, ActionCard, Names, GoalCard, Card
 
-
 class SaboteurAgent(Agent):
 
     def __init__(self, agent_name, agent_program):
@@ -17,6 +16,7 @@ class SaboteurAgent(Agent):
         self.add_sensor('reported-cards-sensor', {}, lambda v: all(isinstance(k, tuple) and len(k) == 2 and all(isinstance(i, int) for i in k) and isinstance(val, bool) for k, val in v.items()))
         self.add_sensor('cards-played-sensor', {}, lambda v: all(isinstance(k, int) and isinstance(v[k], list) and all(isinstance(c, Names) for c in v[k]) for k in v))
         self.add_sensor('deck-status', False, lambda v: isinstance(v, bool))
+        self.add_sensor('flipped-cards-sensor', [], lambda v: all(isinstance(c, tuple) for c in v))
 
     def add_all_actuators(self):
         # place, x, y, card
