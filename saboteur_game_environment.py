@@ -1,7 +1,3 @@
-import random
-from abc import abstractmethod
-from typing import Dict, Optional
-
 from typing import Dict, List, Optional
 from playing_cards import Card, DeadEndCard, TableCard, ActionCard, GoalCard, GoldCard, StartCard, Names, SpecialCard, dirs
 from une_ai.models import GameEnvironment
