@@ -2,6 +2,7 @@ import random
 
 from playing_cards import Names
 from saboteur_game_environment import SaboteurGameEnvironment as se
+from saboteur_game_environment import get_legal_actions_gs
 
 possible_cards = {
     Names.MAP: 9,
@@ -78,7 +79,9 @@ def gold_digger_agent_program(percepts, actuators):
     cards_played = gs['cards-played']  # Dict of player_id and list of cards played
     deck_is_empty = gs['deck-status']  # Bool (isEmpty)
     known_cards = gs['known-cards']  # List of list of bools
-    legal_moves = se.get_legal_actions_gs(gs)
+    flipped_cards = gs['flipped-cards']
+
+    legal_moves = get_legal_actions_gs(board, mining[player], cards, flipped_cards)
 
     #print(f"REPORTED CARDS: {reported}")
 
