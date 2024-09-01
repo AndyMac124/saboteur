@@ -31,7 +31,7 @@ def depth_first_search(board, location, seen, access, flipped_cards):
                 if char in flipped_cards:
                     next_access = Card.static_access_points(board[char].name, flipped=True)
                 else:
-                    next_access = board[char].get_access_points()
+                    next_access = Card.static_access_points(board[char].name)
                 if char is n:
                     if dirs.SOUTH in next_access:
                         if dirs.NORTH in access:

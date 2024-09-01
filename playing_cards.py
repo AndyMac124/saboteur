@@ -1,13 +1,19 @@
+"""
+playing_cards.py
+"""
+
 from abc import ABC
 from enum import Enum
 import pygame
 
+# Enum for the surrounding directions
 class dirs(Enum):
     NORTH = 1
     SOUTH = 2
     EAST = 3
     WEST = 4
 
+# Enums for the card names
 class Names(Enum):
     NONE = 1
     START = 2
@@ -34,25 +40,16 @@ class Names(Enum):
     DE_WS = 23
     DE_W = 24
 
+# Super class for all cards in game
 class Card(ABC):
-    def __init__(self, hidden=False, flipped=False):
-        self.hidden = hidden
-        self.flipped = flipped
-        self.is_special = False
+    def __init__(self):
         self.access_points = []
 
+    # For getting the string of the name
     def __str__(self):
         return f"{self.name}"
 
-    def face_down(self):
-        self.hidden = True
-
-    def show(self):
-        self.hidden = False
-
-    def get_access_points(self):
-        return self.access_points
-
+    # Static method for getting the access points of a card
     @staticmethod
     def static_access_points(card_name, flipped=False):
         access_points_map = {
@@ -92,15 +89,16 @@ class Card(ABC):
 
         return access_points_map.get(card_name, [])
 
+# Class for action cards, take a enum card name as argument
 class ActionCard(Card):
     def __init__(self, name):
         super().__init__()
         self.name = name
         self.image = self.load_action(self.name)
 
+    # Loads the image for the enum name as transparent
     def load_action(self, name):
         image_paths = {
-            Names.GOAL: "images/cards/goal.png",
             Names.MAP: "images/cards/map.png",
             Names.SABOTAGE: "images/cards/sabotage.png",
             Names.MEND: "images/cards/mend.png",
@@ -108,11 +106,12 @@ class ActionCard(Card):
         }
         return pygame.image.load(image_paths[self.name]).convert_alpha()
 
+# Parent class for all Table Cards (Cards to be placed on the board)
 class TableCard(Card):
     def __init__(self, name):
         super().__init__()
         self.name = name
-        self.image = self.load_image(Names.CROSS_SECTION)
+        self.image = self.load_image(name)
 
     def load_image(self, name):
         image_paths = {
@@ -142,146 +141,145 @@ class TableCard(Card):
         }
         return pygame.image.load(image_paths[self.name]).convert_alpha()
 
-    def get_image(self):
-        return self.image
 
+class CrossSectionCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.CROSS_SECTION)
+        self.name = Names.CROSS_SECTION
+        self.image = self.load_image(self.name)
+
+
+class VerticalPathCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.VERTICAL_PATH)
+        self.name = Names.VERTICAL_PATH
+        self.image = self.load_image(self.name)
+
+
+class HorizontalPathCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.HORIZONTAL_PATH)
+        self.name = Names.HORIZONTAL_PATH
+        self.image = self.load_image(self.name)
+
+
+class TurnLeftCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.TURN_LEFT)
+        self.name = Names.TURN_LEFT
+        self.image = self.load_image(self.name)
+
+
+class TurnRightCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.TURN_RIGHT)
+        self.name = Names.TURN_RIGHT
+        self.image = self.load_image(self.name)
+
+
+class VertTCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.VERT_T)
+        self.name = Names.VERT_T
+        self.image = self.load_image(self.name)
+
+
+class HorTCard(TableCard):
+    def __init__(self):
+        super().__init__(Names.HOR_T)
+        self.name = Names.HOR_T
+        self.image = self.load_image(self.name)
+
+
+# Parent class for all Dead End Cards, used for find types
 class DeadEndCard(TableCard):
     def __init__(self, name):
         super().__init__(name)
 
 
-class CrossSectionCard(TableCard):
-    def __init__(self):
-        super().__init__(Names.CROSS_SECTION)
-        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
-        self.name = Names.CROSS_SECTION
-        self.image = self.load_image(self.name)
-
-class VerticalPathCard(TableCard):
-    def __init__(self):
-        super().__init__(Names.VERTICAL_PATH)
-        self.access_points = [dirs.EAST, dirs.WEST]
-        self.name = Names.VERTICAL_PATH
-        self.image = self.load_image(self.name)
-
-class HorizontalPathCard(TableCard):
-    def __init__(self):
-        super().__init__(Names.HORIZONTAL_PATH)
-        self.access_points = [dirs.NORTH, dirs.SOUTH]
-        self.name = Names.HORIZONTAL_PATH
-        self.image = self.load_image(self.name)
-
-class TurnLeftCard(TableCard):
-    def __init__(self):
-        super().__init__(Names.TURN_LEFT)
-        self.access_points = [dirs.NORTH, dirs.WEST]
-        self.name = Names.TURN_LEFT
-        self.image = self.load_image(self.name)
-
-class TurnRightCard(TableCard):
-    def __init__(self):
-        super().__init__(Names.TURN_RIGHT)
-        self.access_points = [dirs.NORTH, dirs.EAST]
-        self.name = Names.TURN_RIGHT
-        self.image = self.load_image(self.name)
-
-class VertTCard(TableCard):
-    def __init__(self):
-        super().__init__(Names.VERT_T)
-        self.access_points = [dirs.WEST, dirs.SOUTH, dirs.EAST]
-        self.name = Names.VERT_T
-        self.image = self.load_image(self.name)
-
-class HorTCard(TableCard):
-    def __init__(self):
-        super().__init__(Names.HOR_T)
-        self.access_points = [dirs.NORTH, dirs.EAST, dirs.SOUTH]
-        self.name = Names.HOR_T
-        self.image = self.load_image(self.name)
-
 class DEAllCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_ALL)
-        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
         self.name = Names.DE_ALL
         self.image = self.load_image(self.name)
+
 
 class DE3ECard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_3_E)
-        self.access_points = [dirs.NORTH, dirs.EAST, dirs.SOUTH]
         self.name = Names.DE_3_E
         self.image = self.load_image(self.name)
+
 
 class DE3SCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_3_S)
-        self.access_points = [dirs.EAST, dirs.SOUTH, dirs.WEST]
         self.name = Names.DE_3_S
         self.image = self.load_image(self.name)
+
 
 class DEEWCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_EW)
-        self.access_points = [dirs.EAST, dirs.WEST]
         self.name = Names.DE_EW
         self.image = self.load_image(self.name)
+
 
 class DENCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_N)
-        self.access_points = [dirs.NORTH]
         self.name = Names.DE_N
         self.image = self.load_image(self.name)
+
 
 class DENSCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_NS)
-        self.access_points = [dirs.NORTH, dirs.SOUTH]
         self.name = Names.DE_NS
         self.image = self.load_image(self.name)
+
 
 class DEWNCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_WN)
-        self.access_points = [dirs.NORTH, dirs.WEST]
         self.name = Names.DE_WN
         self.image = self.load_image(self.name)
+
 
 class DEWSCard(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_WS)
-        self.access_points = [dirs.SOUTH, dirs.WEST]
         self.name = Names.DE_WS
         self.image = self.load_image(self.name)
+
 
 class DEWCards(DeadEndCard):
     def __init__(self):
         super().__init__(Names.DE_W)
-        self.access_points = [dirs.WEST]
         self.name = Names.DE_W
         self.image = self.load_image(self.name)
 
+
+# Parent class for all Special Cards, used for type checking
 class SpecialCard(TableCard):
     def __init__(self, name):
         super().__init__(name)
-        self.is_special = True
+
 
 class StartCard(SpecialCard):
     def __init__(self):
         super().__init__(Names.START)
         self.name = Names.START
-        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
         self.image = self.load_image(self.name)
 
-class GoalCard(ActionCard):
+
+class GoalCard(SpecialCard):
     def __init__(self):
         super().__init__(Names.GOAL)
-        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
         self.image = pygame.image.load("images/cards/goal.png").convert_alpha()
+
 
 class GoldCard(SpecialCard):
     def __init__(self):
         super().__init__(Names.GOLD)
-        self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
         self.image = self.load_image(Names.GOLD)

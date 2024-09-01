@@ -1,16 +1,20 @@
+"""
+game_board.py
+"""
+
 from typing import Dict, Tuple, Optional
-from playing_cards import Names, dirs, DeadEndCard, SpecialCard, StartCard, GoldCard, GoalCard, TableCard, CrossSectionCard, VerticalPathCard, HorizontalPathCard, TurnLeftCard, TurnRightCard, VertTCard, HorTCard, DEAllCard, DE3ECard, DE3SCard, DEEWCard, DENCard, DENSCard, DEWNCard, DEWSCard, DEWCards
+from playing_cards import Card, Names, dirs, DeadEndCard, SpecialCard, StartCard, GoldCard, GoalCard, TableCard, CrossSectionCard, VerticalPathCard, HorizontalPathCard, TurnLeftCard, TurnRightCard, VertTCard, HorTCard, DEAllCard, DE3ECard, DE3SCard, DEEWCard, DENCard, DENSCard, DEWNCard, DEWSCard, DEWCards
 import random
 
+# Class for the game board
 class GameBoard():
 
     def __init__(self):
+        # Board is a dictionary of tuples (x, y) to TableCard objects
         self._board: Dict[Tuple[int, int], Optional[TableCard]] = {(x, y): None for x in range(20) for y in range(20)}
 
         goal_cards = []
         gold_idx = random.choice([0,1,2])
-
-        self._flippedCards = []
 
         for i in range(3):
             if gold_idx == i:
@@ -18,6 +22,7 @@ class GameBoard():
             else:
                 goal_cards.append(GoalCard())
 
+        self._flippedCards = []
         self._board[(6, 10)] = StartCard()
         self.start_point = (6, 10)
         self.goal_locations = [(14,8), (14,10), (14,12)]
@@ -46,8 +51,9 @@ class GameBoard():
         for next_location in (n, e, s, w):
             if self.is_within_bounds(next_location) and next_location not in seen and self._board[next_location] is not None:
                 if type(self._board[next_location]) is not DeadEndCard:
-                    next_access = self._board[next_location].get_access_points()
-                    cur_access = self._board[location].get_access_points()
+                    board = self._board
+                    next_access = Card.static_access_points(board[next_location].name)
+                    cur_access = Card.static_access_points(board[location].name)
                     for n in next_access:
                         if joins[n] in cur_access:
                             if self.dfs(next_location, seen):

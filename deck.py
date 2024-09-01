@@ -1,10 +1,14 @@
+"""
+deck.py
+"""
+
 from playing_cards import TableCard, ActionCard, GoalCard, GoldCard, StartCard, Names
 import random
 
+# Class for the deck of cards
 class Deck():
     def __init__(self):
         self._deck = []
-
         self._initialise_deck()
         self.shuffle()
     
@@ -57,7 +61,6 @@ class Deck():
 
     def draw(self):
         assert len(self._deck) > 0, "There are no more cards in the deck"
-
         return self._deck.pop()
 
     def is_empty(self):

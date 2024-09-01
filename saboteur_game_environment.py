@@ -109,7 +109,8 @@ class SaboteurGameEnvironment(GameEnvironment):
         if self._deck.is_empty():
             for i in range(8):
                 pc = self._players_cards
-                if pc[i] is not []:
+                print(pc[i])
+                if pc[i]:
                     return False
             self._winner = "Saboteurs"
             return True
