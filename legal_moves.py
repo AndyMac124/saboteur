@@ -149,7 +149,7 @@ def get_legal_actions_gs(board, mining, player_cards, flipped_cards):
                 # Could check if any are unknown
                 for j in range(3):
                     for b in range(2):
-                        legal_actions.append(f'map-{j}-{b}-{i}')
+                        legal_actions.append(f'map-{b}-{j}-{i}')
             elif card.name == Names.MEND:
                 for j in range(8):
                     legal_actions.append(f'mend-{0}-{j}-{i}')

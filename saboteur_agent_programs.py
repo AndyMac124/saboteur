@@ -1,8 +1,7 @@
 import random
 
 from playing_cards import Names
-from saboteur_game_environment import SaboteurGameEnvironment as se
-from saboteur_game_environment import get_legal_actions_gs
+from legal_moves import get_legal_actions_gs
 
 possible_cards = {
     Names.MAP: 9,

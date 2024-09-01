@@ -1,8 +1,7 @@
 import random
 
 from playing_cards import Names
-from saboteur_game_environment import SaboteurGameEnvironment as se
-from saboteur_game_environment import get_legal_actions_gs
+from legal_moves import get_legal_actions_gs
 
 possible_cards = {
     Names.MAP: 9,
@@ -274,14 +273,37 @@ def gold_digger_agent_program(percepts, actuators):
                             return actions
 
     if x - target[0] < 0:
-        #print("TARGET IS DOWN-ACROSS")
-        #print(f"CHECKING FOR: place-{x+1}")
         for move in legal_moves:
             for i in range(-4, 4):
                 if y+i < 20 and y+i >= 0:
                     if move.startswith(f"place-{x}-{y+i}") or move.startswith(f"rotate-{x}-{y+i}" or move.startswith(f"place-{x}-{y-i}") or move.startswith(f"rotate-{x}-{y-i}")):
                         actions.append(move)
                         #print(f"ACTION: {move}")
+                        return actions
+
+    # If card on lowest row is turn right and is in flipped card, dynamite
+    for i in range(-4, 4):
+        if y+i < 20 and y+i >= 0:
+            card = board[(x, y+i)]
+            if card is not None:
+                if card.name == Names.TURN_RIGHT and (x, y+i) in flipped_cards:
+                    for move in legal_moves:
+                        if move.startswith(f"dynamite-{x}-{y+i}"):
+                            actions.append(move)
+                            return actions
+                # If card on lowest row is turn left and is NOT in flipped card, dynamite
+                if card.name == Names.TURN_LEFT and (x, y+i) not in flipped_cards:
+                    for move in legal_moves:
+                        if move.startswith(f"dynamite-{x}-{y+i}"):
+                            actions.append(move)
+                            return actions
+
+    if x - target[0] < 0:
+        for move in legal_moves:
+            for i in range(-4, 4):
+                if y+i < 20 and y+i >= 0:
+                    if move.startswith(f"place-{x-1}-{y+i}") or move.startswith(f"rotate-{x-1}-{y+i}" or move.startswith(f"place-{x-1}-{y-i}") or move.startswith(f"rotate-{x-1}-{y-i}")):
+                        actions.append(move)
                         return actions
 
     if y - target[1] > 0:
