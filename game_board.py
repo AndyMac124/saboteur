@@ -110,7 +110,7 @@ class GameBoard():
 
     def flip_goal_card(self, loc):
         if loc in self.goal_locations:
-            if loc is self.gold_loc:
+            if loc == self.gold_loc:
                 self._board[loc] = GoldCard()
             else:
                 self._board[loc] = CrossSectionCard()

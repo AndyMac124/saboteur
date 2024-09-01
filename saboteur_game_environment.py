@@ -96,6 +96,14 @@ class SaboteurGameEnvironment(GameEnvironment):
         return 0
 
     def is_terminal(self):
+        board = self._game_board.get_board()
+        goal_locations = [(14,8), (14,10), (14,12)]
+
+        for goal in goal_locations:
+            if board[goal].name is Names.GOLD:
+                print("GOLD FOUND THE GAME IS OVER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                return True
+
         if self._deck.is_empty():
             for i in range(8):
                 pc = self._players_cards
@@ -386,8 +394,9 @@ class SaboteurGameEnvironment(GameEnvironment):
                         for c in range(20):
                             card_type = type(board[(r, c)])
                             specials = [(6, 10), (14, 8), (14, 10), (14, 12)]
-                            if card_type is not SpecialCard and (r, c) not in specials:
-                                legal_actions.append(f'dynamite-{r}-{c}-{i}')
+                            if board[(r, c)] is not None:
+                                if card_type is not SpecialCard and (r, c) not in specials:
+                                    legal_actions.append(f'dynamite-{r}-{c}-{i}')
                 else:
                     raise ValueError(f"Unknown action card {card.name}")
         return legal_actions
@@ -430,6 +439,9 @@ class SaboteurGameEnvironment(GameEnvironment):
             self._game_board.add_path_card(row, col, card)
             self.add_played_card(player_turn, card)
             new_gs['player-cards'].remove(card)
+        elif action.startswith('pass'):
+            pass
+            # Do nothing
         elif action.startswith('rotate'):
             _, x, y, z = action.split('-')
             row = int(x)
@@ -506,9 +518,7 @@ class SaboteurGameEnvironment(GameEnvironment):
         action = None
 
         if handling_type == 'pass':
-            new_state = game_state
-            new_state['player-turn'] = (self._player_turn + 1) % len(self._players)
-            self._player_turn = new_state['player-turn']
+            action = 'pass-{0}-{1}-{2}'.format(x, y, z)
         elif handling_type == 'rotate':
             action = 'rotate-{0}-{1}-{2}'.format(x, y, z)
         elif handling_type == 'place':

@@ -58,7 +58,7 @@ class Card(ABC):
     def static_access_points(card_name, flipped=False):
         access_points_map = {
             Names.START: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
-            Names.GOAL: [],
+            Names.GOAL: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
             Names.GOLD: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
             Names.CROSS_SECTION: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
             Names.VERTICAL_PATH: [dirs.EAST, dirs.WEST],
