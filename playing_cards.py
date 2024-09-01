@@ -33,7 +33,6 @@ class Names(Enum):
     DE_WN = 22
     DE_WS = 23
     DE_W = 24
-    BROKEN = 25
 
 class Card(ABC):
     def __init__(self, hidden=False, flipped=False):
@@ -76,7 +75,6 @@ class Card(ABC):
             Names.DE_WN: [dirs.NORTH, dirs.WEST],
             Names.DE_WS: [dirs.SOUTH, dirs.WEST],
             Names.DE_W: [dirs.WEST],
-            Names.BROKEN: [],
             Names.DYNAMITE: []
         }
 
@@ -87,7 +85,7 @@ class Card(ABC):
             access_points_map[Names.HOR_T] = [dirs.NORTH, dirs.WEST, dirs.SOUTH]
             access_points_map[Names.DE_3_E] = [dirs.NORTH, dirs.WEST, dirs.SOUTH]
             access_points_map[Names.DE_3_S] = [dirs.NORTH, dirs.EAST, dirs.WEST]
-            access_points_map[Names.DE_WN] = [dirs.NORTH, dirs.WEST]
+            access_points_map[Names.DE_WN] = [dirs.SOUTH, dirs.EAST]
             access_points_map[Names.DE_WS] = [dirs.NORTH, dirs.EAST]
             access_points_map[Names.DE_N] = [dirs.SOUTH]
             access_points_map[Names.DE_W] = [dirs.EAST]
@@ -141,7 +139,6 @@ class TableCard(Card):
             Names.DE_WN: "images/cards/de_wn.png",
             Names.DE_WS: "images/cards/de_ws.png",
             Names.DE_W: "images/cards/de_w.png",
-            Names.BROKEN: "images/cards/broken.png",
         }
         return pygame.image.load(image_paths[self.name]).convert_alpha()
 
@@ -288,9 +285,3 @@ class GoldCard(SpecialCard):
         super().__init__(Names.GOLD)
         self.access_points = [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST]
         self.image = self.load_image(Names.GOLD)
-
-class BrokenCard(SpecialCard):
-    def __init__(self):
-        super().__init__(Names.BROKEN)
-        self.access_points = []
-        self.image = self.load_image(Names.BROKEN)

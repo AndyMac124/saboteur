@@ -32,28 +32,31 @@ def saboteur_agent_program(percepts, actuators):
     actions = []
 
     throwing_cards = [
-        Names.TURN_RIGHT,
-        Names.TURN_LEFT,
-        Names.VERTICAL_PATH,
+        Names.CROSS_SECTION,
+        Names.HOR_T,
         Names.HORIZONTAL_PATH,
         Names.VERT_T,
-        Names.HOR_T,
-        Names.CROSS_SECTION,
+        Names.TURN_LEFT,
+        Names.TURN_RIGHT,
+        Names.VERTICAL_PATH
     ]
 
     best_cards_down = [
-        Names.CROSS_SECTION,
-        Names.HOR_T,
-        Names.HORIZONTAL_PATH,
-        Names.TURN_RIGHT,
-        Names.VERT_T,
+        Names.DE_ALL,
+        Names.DE_N,
+        Names.DE_WN,
+        Names.DE_3_E,
+        Names.DE_3_S,
+        Names.TURN_LEFT,
+        Names.VERTICAL_PATH,
     ]
 
     best_cards_down_rotated = [
-        Names.CROSS_SECTION,
-        Names.HOR_T,
-        Names.HORIZONTAL_PATH,
-        Names.TURN_LEFT,
+        Names.DE_ALL,
+        Names.DE_3_E,
+        Names.DE_3_S,
+        Names.DE_WS,
+        Names.VERT_T,
     ]
 
     dead_ends = [Names.DE_ALL, Names.DE_3_E, Names.DE_3_S, Names.DE_EW, Names.DE_N, Names.DE_NS, Names.DE_WN, Names.DE_WS, Names.DE_W]
@@ -66,6 +69,7 @@ def saboteur_agent_program(percepts, actuators):
         'reported-cards': percepts['reported-cards-sensor'],
         'cards-played': percepts['cards-played-sensor'],
         'deck-status': percepts['deck-status'],
+        'known-cards': percepts['known-cards-sensor'],
         'flipped-cards': percepts['flipped-cards-sensor']
     }
 
@@ -76,10 +80,13 @@ def saboteur_agent_program(percepts, actuators):
     reported = gs['reported-cards']  # Dict of player_id and  tuple (goal_index, bool)
     cards_played = gs['cards-played']  # Dict of player_id and list of cards played
     deck_is_empty = gs['deck-status']  # Bool (isEmpty)
+    known_cards = gs['known-cards']  # List of list of bools
     legal_moves = se.get_legal_actions_gs(gs)
 
+    #print(f"REPORTED CARDS: {reported}")
+
     if len(cards) == 0 or len(legal_moves) == 0:
-        move = ('pass', 0, 0, 0)
+        move = f"pass-0-0-0"
         actions.append(move)
         return actions
 
@@ -102,6 +109,7 @@ def saboteur_agent_program(percepts, actuators):
 
     # Dictionary of goal cards we have ruled out
     goal_cards = [(14,8), (14,10), (14,12)]
+    gold_idx = -1
     for loc in goal_cards:
         if board[loc].name is not Names.GOAL:
             goal_cards[goal_cards.index(loc)] = None
@@ -109,29 +117,40 @@ def saboteur_agent_program(percepts, actuators):
     # Location of gold card
     gold_loc = None
 
-    possibles = 0
-    for loc in goal_cards:
-        if loc is not None:
-            possibles += 1
-    if possibles == 1:
+    for i in range(3):
+        if known_cards[i] is not None:
+            if known_cards[i] is False:
+                goal_cards[i] = None
+            else:
+                gold_loc = goal_cards[i]
+                gold_idx = i
+                #print(f" GOLD LOC = {gold_loc}")
+
+    if gold_loc is None:
+        possibles = 0
         for loc in goal_cards:
             if loc is not None:
-                gold_loc = loc
-                print(f" GOLD LOC = {gold_loc}")
+                possibles += 1
+        if possibles == 1:
+            for loc in goal_cards:
+                if loc is not None:
+                    gold_loc = loc
+                    gold_idx = goal_cards.index(loc)
+                    #print(f" GOLD LOC = {gold_loc}")
 
     # If we know the gold position and another player has reported it as true
     # They are likely a GoldDigger
     if gold_loc is not None:
         for i in range(8):
-            if reported[i][0] == gold_loc and reported[i][1]:
+            if reported[i][0] == gold_idx and reported[i][1]:
                 suspected_golddigger[i] = True
 
     # If we know the gold position and another player has reported it as false
     if gold_loc is not None:
         for i in range(8):
-            if reported[i][0] == gold_loc and not reported[i][1]:
+            if reported[i][0] == gold_idx and not reported[i][1]:
                 suspected_saboteur[i] = True
-            elif reported[i][0] != gold_loc and reported[i][1]:
+            elif reported[i][0] != gold_idx and reported[i][1]:
                 suspected_saboteur[i] = True
 
     # If trusted GoldDigger reports a card as false, remove it.
@@ -144,37 +163,39 @@ def saboteur_agent_program(percepts, actuators):
                             if goal_cards[j] == reported[i][0]:
                                 goal_cards[j] = None
 
-    print(f"Goal Cards: {goal_cards}")
+    #print(f"Goal Cards: {goal_cards}")
 
-    # If player suspected of being GoldDigger, and player is not mining, play mend on them
+    # If player suspected of being GoldDigger, and player is mining, play sabotage on them
     for p in range(8):
-        if suspected_golddigger[p] and not mining[p]:
-            for c in range(4):
-                action = (f"mend-{0}-{p}-{c}")
-                if action in legal_moves:
-                    actions.append(action)
-                    print(f"ACTION: {action}")
-                    return actions
-
-    # If player suspected of being Saboteur, we will play Sabotage on them
-    for p in range(8):
-        if suspected_saboteur[p]:
+        if suspected_golddigger[p] and mining[p]:
             for c in range(4):
                 action = (f"sabotage-{0}-{p}-{c}")
                 if action in legal_moves:
                     actions.append(action)
-                    print(f"ACTION: {action}")
+                    #print(f"ACTION: {action}")
                     return actions
 
+    # If player suspected of being Saboteur, and player not mining, mend them
+    for p in range(8):
+        if suspected_saboteur[p] and not mining[p]:
+            for c in range(4):
+                action = (f"mend-{0}-{p}-{c}")
+                if action in legal_moves:
+                    actions.append(action)
+                    #print(f"ACTION: {action}")
+                    return actions
+
+    #print(f"SUSPECTED SABOTEUR: {suspected_saboteur}")
+    #print(f"SUSPECTED GOLDDIGGER: {suspected_golddigger}")
     # If we have a Map card, play it. Could strongly help us find our enemies and allies
     if gold_loc is None:
         for i in range(3):
             if goal_cards[i] is not None:
                 for j in range(4):
-                    for move in legal_moves:# Assuming the wildcard can be any value from 0 to 3
-                        if move == f"map-0-{i}-{j}":
+                    for move in legal_moves:
+                        if move == f"map-1-{i}-{j}":
                             actions.append(move)
-                            print(f"ACTION: {move}")
+                            #print(f"ACTION: {move}")
                             return actions
 
     # Get the closest cell to center goal or gold card
@@ -187,8 +208,6 @@ def saboteur_agent_program(percepts, actuators):
             target = goal_cards[0]
         elif goal_cards[2] is not None:
             target = goal_cards[2]
-
-
 
     for cell in board:
         #if str(board[cell]) == 'NONE' and str(board[cell]) not in [str(Names.GOAL), str(Names.GOLD)]:
@@ -206,33 +225,16 @@ def saboteur_agent_program(percepts, actuators):
     x = closest_card[0]
     y = closest_card[1]
     closest = board[closest_card]
-    print(f"Closest card to goal: {closest.name} with {target[0]} and {target[1]}")
-    print(legal_moves)
+    #print(f"Closest card to goal: {closest.name} with {target[0]} and {target[1]}")
+    #print(legal_moves)
 
     # startCard = board[(6, 10)]
     # if startCard.name is Names.START:
     # for card in cards: card.name is Names.CROSS_SECTION
 
-    if closest.name in dead_ends:
-        print("Closest card is dead end")
-        for move in legal_moves:
-            if move.startswith(f"dynamite-{x}-{y}"):
-                actions.append(move)
-                print(f"ACTION: {move}")
-                return actions
-
-    # if dead end in lowest row, blow it out.
-    for move in legal_moves:
-        for i in range(-3, 3):
-            if move.startswith(f"dynamite-{x}-{y+i}"):
-                if board[(x, y+i)].name in dead_ends:
-                    actions.append(move)
-                    print(f"ACTION: {move}")
-                    return actions
-
     if x - target[0] < 0:
-        print("TARGET IS DOWN")
-        print(f"CHECKING FOR: place-{x+1}")
+        #print("TARGET IS DOWN")
+        #print(f"CHECKING FOR: place-{x+1}")
         for move in legal_moves:
             index = move[-1]
             ind = int(index)
@@ -242,27 +244,62 @@ def saboteur_agent_program(percepts, actuators):
                     if y+i < 20 and y+i >= 0:
                         if move.startswith(f"place-{x+1}-{y+i}"):
                             actions.append(move)
-                            print(f"ACTION: {move}")
+                            #print(f"ACTION: {move}")
                             return actions
             elif c.name in best_cards_down_rotated:
                 for i in range(-4, 4):
                     if y+i < 20 and y+i >= 0:
                         if move.startswith(f"rotate-{x+1}-{y+i}"):
                             actions.append(move)
-                            print(f"ACTION: {move}")
+                            #print(f"ACTION: {move}")
                             return actions
 
+    # If closest card is not a dead end, dynamite it.
+    if closest.name not in dead_ends:
+        #print("Closest card is dead end")
+        for move in legal_moves:
+            if move.startswith(f"dynamite-{x}-{y}"):
+                actions.append(move)
+                #print(f"ACTION: {move}")
+                return actions
+
+    # If Cross section below start card, dynamite it
+    start_row = 6
+    start_col = 10
+    for i in range(3):
+        if board[(start_row, start_col+i)] is not None:
+            if board[(start_row, start_col+i)].name is Names.CROSS_SECTION:
+                for move in legal_moves:
+                    if move.startswith(f"dynamite-6-{10+i}"):
+                        actions.append(move)
+                        #print(f"ACTION: {move}")
+                        return actions
+
     if x - target[0] < 0:
-        print("TARGET IS DOWN-ACROSS")
-        print(f"CHECKING FOR: place-{x+1}")
+        #print("TARGET IS DOWN-ACROSS")
+        #print(f"CHECKING FOR: place-{x+1}")
         for move in legal_moves:
             for i in range(-4, 4):
                 if y+i < 20 and y+i >= 0:
                     if move.startswith(f"place-{x}-{y+i}") or move.startswith(f"rotate-{x}-{y+i}" or move.startswith(f"place-{x}-{y-i}") or move.startswith(f"rotate-{x}-{y-i}")):
                         actions.append(move)
-                        print(f"ACTION: {move}")
+                        #print(f"ACTION: {move}")
                         return actions
 
+    #print("THROWING least ranked card")
+    for i in range(7):
+        for j in range(len(cards)):
+            if cards[j].name == throwing_cards[i]:
+                actions.append(f"discard-0-0-{j}")
+                return actions
+
+    #print("No actions found")
+    actions.append(random.choice(legal_moves))
+
+    return actions
+
+
+'''
     if y - target[1] > 0:
         # Go left
         print("TARGET IS LEFT")
@@ -295,34 +332,4 @@ def saboteur_agent_program(percepts, actuators):
                         actions.append(move)
                         print(f"ACTION: {move}")
                         return actions
-
-    print("CHECKING for cross section")
-    # Play the closest path card to the goal row prioritising higher ranked cards
-    for move in legal_moves:
-        if move.startswith(f"place-{x+1}-{y}") or move.startswith(f"place-{x}-{y+1}") or move.startswith(f"rotate-{x}-{y-1}"):
-            for card in cards:
-                if card.name == Names.CROSS_SECTION:
-                    actions.append(move)
-                    print(f"ACTION: {move}")
-                    return actions
-
-    # Throw away dead end cards
-    for move in legal_moves:
-        if move.startswith("discard"):
-            for card in cards:
-                if card.name in dead_ends:
-                    print("Throwing Dead end")
-                    actions.append(move)
-                    return actions
-
-    print("THROWING least ranked card")
-    for i in range(7):
-        for j in range(len(cards)):
-            if cards[j].name == throwing_cards[i]:
-                actions.append(f"discard-0-0-{j}")
-                return actions
-
-    print("No actions found")
-    actions.append(random.choice(legal_moves))
-
-    return actions
+'''

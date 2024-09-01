@@ -1,5 +1,5 @@
 from typing import Dict, Tuple, Optional
-from playing_cards import Names, dirs, DeadEndCard, SpecialCard, BrokenCard, StartCard, GoldCard, GoalCard, TableCard, CrossSectionCard, VerticalPathCard, HorizontalPathCard, TurnLeftCard, TurnRightCard, VertTCard, HorTCard, DEAllCard, DE3ECard, DE3SCard, DEEWCard, DENCard, DENSCard, DEWNCard, DEWSCard, DEWCards
+from playing_cards import Names, dirs, DeadEndCard, SpecialCard, StartCard, GoldCard, GoalCard, TableCard, CrossSectionCard, VerticalPathCard, HorizontalPathCard, TurnLeftCard, TurnRightCard, VertTCard, HorTCard, DEAllCard, DE3ECard, DE3SCard, DEEWCard, DENCard, DENSCard, DEWNCard, DEWSCard, DEWCards
 import random
 
 class GameBoard():
@@ -98,7 +98,6 @@ class GameBoard():
             Names.DE_WN: DEWNCard(),
             Names.DE_WS: DEWSCard(),
             Names.DE_W: DEWCards(),
-            Names.DYNAMITE: BrokenCard(),
         }
         card_class = card_types.get(name.name, None)
         if card_class:
@@ -117,14 +116,12 @@ class GameBoard():
 
     def peak_goal_card(self, index):
         if index < 0 or index >= 3:
-            return None
-        x, y = self._board[self.goal_locations[index]]
-        if (x, y) in self.goal_locations:
-            if (x, y) is self.gold_loc:
-                return True
-            else:
-                return False
-        return None
+            return False
+        x, y = self.goal_locations[index]
+        if (x, y) == self.gold_loc:
+            return True
+        else:
+            return False
 
     # This method does not check if there is a valid path from
     # the starting card to the new placed card

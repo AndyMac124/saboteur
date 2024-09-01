@@ -84,8 +84,10 @@ class SaboteurGame:
         self._agents[cur_type].act(actions, self._environment)
 
     def _draw_game_over(self):
-        # TODO game over display
-        pass
+        winner = self._environment.get_winner()
+        self._draw_text("GAME OVER", 100, 'center', 'middle', 45)
+        self._draw_text("Winner: {0}".format(winner), 150, 'center', 'middle', 30)
+
 
     def _draw_text(self, text_message, padding_top, orientation, vertical_align='top', font_size=20):
         font = pygame.font.SysFont(self._font, font_size)
@@ -119,6 +121,10 @@ class SaboteurGame:
             player_cards = gs['player-cards']
             self._display.fill(BLACK, (0, self._display_size[1], self._display_size[0], INFO_BAR_HEIGHT))  # Clear the text area
             self._draw_text("Player Turn: {0}".format(player_turn), 10, 'left', 'bottom', 15)
+            move = self._environment.get_previous_move()
+            player_type = self._environment.get_last_player_type()
+            self._draw_text("Previous move was: {0} by a {1}".format(move, player_type), 10, 'right', 'bottom', 15)
+
             x_pos = 200  # Initial x position with padding from the left edge
             y_pos = self._display_size[1] + 10  # Position just above the info bar
 
@@ -143,5 +149,3 @@ class SaboteurGame:
                     quit()
 
             self._play_step()
-        # TODO game over display
-        pass
