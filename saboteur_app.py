@@ -1,5 +1,8 @@
 """
 saboteur_app.py
+
+Reference: This game is based off the structure of the COSC350 code examples and assignments.
+It integrates with the une_ai package and as such covers a lot of the same functionality.
 """
 
 import random
@@ -33,6 +36,6 @@ if __name__ == '__main__':
             player = SaboteurAgent(i, saboteur_agent_program)
         players[i] = player
         # Adding player, players index, and player type
-        game_environment.add_player_cards(player, i, possible_players[i])
+        game_environment.add_player_with_cards(player, i, possible_players[i])
 
     game = SaboteurGame(game_environment, players)

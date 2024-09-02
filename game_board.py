@@ -1,5 +1,6 @@
 """
 game_board.py
+Reference: Heavily modified version of the deck.py file from the starter zip file for this COSC350 assignment.
 """
 
 from typing import Dict, Tuple, Optional

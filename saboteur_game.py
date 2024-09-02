@@ -1,5 +1,7 @@
 """
 saboteur_game.py
+
+Reference: This class was built off the Connect Four Game class by Johnathon Vitale from COSC350 Assignment 2.
 """
 
 import pygame

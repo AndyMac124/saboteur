@@ -1,3 +1,9 @@
+"""
+saboteur_agent.py
+
+Reference: This file is based off the Agent Programs from COSC350 Tutorials by Johnathon Vitale.
+"""
+
 from une_ai.models import Agent
 from typing import Dict, Tuple, Optional
 from playing_cards import TableCard, ActionCard, Names, GoalCard, Card

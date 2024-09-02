@@ -1,3 +1,10 @@
+"""
+saboteur_game_environment.py
+
+Reference: This class was based off the ConnectFourEnvironment class from the COSC350 Assignment 2 by Johnathon Vitale.
+"""
+
+import random
 from typing import Dict, List, Optional
 from playing_cards import Card, Names
 from legal_moves import is_connected_to_start
@@ -6,13 +13,15 @@ from game_board import GameBoard
 from deck import Deck
 
 
+# Game Environment for Saboteur Game
 class SaboteurGameEnvironment(GameEnvironment):
 
     def __init__(self):
         super().__init__("Saboteur Game Environment")
         self._game_board = GameBoard()
         self._players = []
-        self._player_turn = 0
+        first = random.randint(0, 7)
+        self._player_turn = first
         self._mining_states = [True] * 8
         self._players_cards: List[List[Optional[Card]]] = [[] for _ in range(8)]
         self._deck = Deck()
@@ -27,7 +36,8 @@ class SaboteurGameEnvironment(GameEnvironment):
     def add_player(self, player):
         self._players.append(player)
 
-    def add_player_cards(self, player, player_id, types):
+    # Adds a player, their four cards and their type to the game
+    def add_player_with_cards(self, player, player_id, types):
         self.add_player(player)
         self.player_type_list.append(types)
         self._players_cards[player_id] = [self._deck.draw() for _ in range(4)]
@@ -49,25 +59,23 @@ class SaboteurGameEnvironment(GameEnvironment):
             'known-cards-sensor': game_state['known_cards']
         }
 
+    # Using the legal_moves file instead of this
     def get_legal_actions(game_state):
         return []
 
+    # Used by the GUI to display the type of previous player
     def get_last_player_type(self):
         return str(self.previous_player)
 
+    # Used by the GUI to display the previous move
     def get_previous_move(self):
         return str(self.previous_move)
-
-    def get_player(self, player_id):
-        if player_id in self._players:
-            return self._players[player_id]
-        else:
-            raise KeyError(f"Player ID {player_id} not found in players dictionary")
 
     def turn(gamestate):
         player_id = gamestate['player-turn']
         return player_id
 
+    # Adds a played card to the list of played cards at position of player_id
     def add_played_card(self, player_id, card):
         if player_id in self._played_cards:
             self._played_cards[player_id].append(card.name)
@@ -92,6 +100,7 @@ class SaboteurGameEnvironment(GameEnvironment):
     def get_winner(self):
         return self._winner
 
+    # Using a rule based strategy in agent programs
     def payoff(self, player_name):
         return 0
 
@@ -99,6 +108,7 @@ class SaboteurGameEnvironment(GameEnvironment):
         board = self._game_board.get_board()
         goal_locations = [(14,8), (14,10), (14,12)]
 
+        # If the gold card is flipped, check if it is connected to the start
         for goal in goal_locations:
             if board[goal].name is Names.GOLD:
                 access = Card.static_access_points(Names.GOLD)
@@ -106,29 +116,97 @@ class SaboteurGameEnvironment(GameEnvironment):
                     self._winner = "Gold Diggers"
                     return True
 
+        # If the deck is empty, check if all players have no cards left
         if self._deck.is_empty():
             for i in range(8):
                 pc = self._players_cards
-                print(pc[i])
                 if pc[i]:
                     return False
             self._winner = "Saboteurs"
             return True
+
         return False
 
-    def _change_player_turn(self):
-        self._player_turn = (self._player_turn + 1) % len(self._players)
-
-    def _report_card(self, player_id, is_gold, index):
+    # Used when a player uses the map card, adds to dict of reported cards
+    def _report_card(self, player_id, truth, index):
         # Dict of player_id and  tuple (goal_index, bool)
-        if is_gold:
+        if truth:
             self._reported_cards[player_id] = (int(index), True)
         else:
             self._reported_cards[player_id] = (int(index), False)
 
+    # Used for placing a card on the board in standard orientation
+    def _place_card(self, player_turn, new_gs, row, col, c):
+        card = self._players_cards[player_turn][c]
+        self._game_board.add_path_card(row, col, card)
+        self.add_played_card(player_turn, card)
+        new_gs['player-cards'].remove(card)
+        self.previous_move = f"Place Card at ({row},{col})"
+        self.previous_player = self.previous_player = self.player_type_list[player_turn]
 
+    # Used for placing a card on the board in rotated orientation
+    def _place_rotated_card(self, player_turn, new_gs, row, col, c):
+        card = self._players_cards[player_turn][c]
+        self._game_board.add_flipped_path_card(row, col, card)
+        self.add_played_card(player_turn, card)
+        new_gs['player-cards'].remove(card)
+        self.previous_move = f"Place Flipped Card at ({row},{col})"
+        self.previous_player = self.previous_player = self.player_type_list[player_turn]
+
+    # Used for discarding a card
+    def _discard_card(self, player_turn, new_gs, card_index):
+        card = self._players_cards[player_turn][card_index]
+        new_gs['player-cards'].remove(card)
+        self.previous_move = f"Discard index {card_index}"
+        self.previous_player = self.previous_player = self.player_type_list[player_turn]
+
+    # Used for mending a player and changing their mining state to True
+    def _mend_player(self, player_turn, new_gs, p, card_index):
+        card = self._players_cards[player_turn][card_index]
+        new_gs['player-cards'].remove(card)
+        self.add_played_card(player_turn, card)
+        self._mining_states[p] = True
+        self.previous_move = f"Mend player: {p}"
+        self.previous_player = self.previous_player = self.player_type_list[player_turn]
+
+    # Used for sabotaging a player and changing their mining state to False
+    def _sabotage_player(self, player_turn, new_gs, p, card_index):
+        card = self._players_cards[player_turn][card_index]
+        new_gs['player-cards'].remove(card)
+        self.add_played_card(player_turn, card)
+        self._mining_states[p] = False
+        self.previous_move = f"Sabotage Player: {p}"
+        self.previous_player = self.previous_player = self.player_type_list[player_turn]
+
+    # Used for playing a dynamite card and removing a path card from the board
+    def _play_dynamite(self, player_turn, new_gs, row, col, card_index):
+        card = self._players_cards[player_turn][card_index]
+        self._game_board.remove_path_card(row, col)
+        self.add_played_card(player_turn, card)
+        new_gs['player-cards'].remove(card)
+        self.previous_move = f"Drop Dynamite at ({row},{col})"
+        self.previous_player = self.previous_player = self.player_type_list[player_turn]
+
+    # Used for playing a map card to peak at a goal card
+    def _play_map(self, player_turn, new_gs, truth, g_idx, card_index):
+        card = self._players_cards[player_turn][card_index]
+        self.add_played_card(player_turn, card)
+        new_gs['player-cards'].remove(card)
+        is_gold = self._game_board.peak_goal_card(g_idx)
+        self._known_cards[player_turn][g_idx] = is_gold
+        if truth == 0:
+            # Reveal Truth
+            self._report_card(player_turn, is_gold, g_idx)
+        elif truth == 1:
+            # Reveal Lie
+            self._report_card(player_turn, not is_gold, g_idx)
+        new_gs['reported-cards'] = self._reported_cards
+        self.previous_move = f"Map for goal index:{g_idx}"
+        self.previous_player = self.player_type_list[player_turn]
+
+    # Generates a new game state based on an action
     def transition_result(self, game_state, action):
-        game_board = self._game_board  # Use the existing GameBoard object
+        game_board = self._game_board
         new_gs = {
             'game-board': game_board,
             'player-turn': self._player_turn,
@@ -141,107 +219,43 @@ class SaboteurGameEnvironment(GameEnvironment):
             'deck': self._deck,
             'flipped_cards': self._game_board.get_flipped_cards(),
         }
-
         player_turn = game_state['player-turn']
 
+        _, row_str, col_str, c = action.split('-')
+        row = int(row_str)
+        col = int(col_str)
+        card_index = int(c)
+        assert card_index < len(self._players_cards[player_turn]), f"Card index {card_index} is out of range for player {player_turn}"
+        assert card_index >= 0, f"Card index {card_index} is out of range for player {player_turn}"
+
         if action.startswith('place'):
-            _, x, y, z = action.split('-')
-            row = int(x)
-            col = int(y)
-            card_index = int(z)
-            if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
-                raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
-            card = self._players_cards[player_turn][card_index]
-            self._game_board.add_path_card(row, col, card)
-            self.add_played_card(player_turn, card)
-            new_gs['player-cards'].remove(card)
-            self.previous_move = f"Place Card at ({x},{y})"
-            self.previous_player = self.previous_player = self.player_type_list[player_turn]
+            self._place_card(player_turn, new_gs, row, col, card_index)
         elif action.startswith('pass'):
             self.previous_move = f"Pass (No cards left)"
             self.previous_player = self.previous_player = self.player_type_list[player_turn]
         elif action.startswith('rotate'):
-            _, x, y, z = action.split('-')
-            row = int(x)
-            col = int(y)
-            card_index = int(z)
-            if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
-                raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
-            card = self._players_cards[player_turn][card_index]
-            self._game_board.add_flipped_path_card(row, col, card)
-            self.add_played_card(player_turn, card)
-            new_gs['player-cards'].remove(card)
-            self.previous_move = f"Place Flipped Card at ({x},{y})"
-            self.previous_player = self.previous_player = self.player_type_list[player_turn]
+            self._place_rotated_card(player_turn, new_gs, row, col, card_index)
         elif action.startswith('discard'):
-            _, _, _, index = action.split('-')
-            card_index = int(index)
-            card = self._players_cards[player_turn][card_index]
-            new_gs['player-cards'].remove(card)
-            self.previous_move = f"Discard index {card_index}"
-            self.previous_player = self.previous_player = self.player_type_list[player_turn]
+            self._discard_card(player_turn, new_gs, card_index)
         elif action.startswith('mend'):
-            _, _, p, z = action.split('-')
-            card_index = int(z)
-            if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
-                raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
-            card = self._players_cards[player_turn][card_index]
-            new_gs['player-cards'].remove(card)
-            self.add_played_card(player_turn, card)
-            self._mining_states[int(p)] = True
-            self.previous_move = f"Mend player: {p}"
-            self.previous_player = self.previous_player = self.player_type_list[player_turn]
+            self._mend_player(player_turn, new_gs, col, card_index)
         elif action.startswith('sabotage'):
-            _, _, p, z = action.split('-')
-            card_index = int(z)
-            if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
-                raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
-            card = self._players_cards[player_turn][card_index]
-            new_gs['player-cards'].remove(card)
-            self.add_played_card(player_turn, card)
-            self._mining_states[int(p)] = False
-            self.previous_move = f"Sabotage Player: {p}"
-            self.previous_player = self.previous_player = self.player_type_list[player_turn]
+            self._sabotage_player(player_turn, new_gs, col, card_index)
         elif action.startswith('dynamite'):
-            _, x, y, z = action.split('-')
-            row = int(x)
-            col = int(y)
-            card_index = int(z)
-            if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
-                raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
-            card = self._players_cards[player_turn][card_index]
-            self._game_board.remove_path_card(row, col)
-            self.add_played_card(player_turn, card)
-            new_gs['player-cards'].remove(card)
-            self.previous_move = f"Drop Dynamite at ({x},{y})"
-            self.previous_player = self.previous_player = self.player_type_list[player_turn]
+            self._play_dynamite(player_turn, new_gs, row, col, card_index)
         elif action.startswith('map'):
-            _, y, index, z = action.split('-')
-            card_index = int(z)
-            y = int(y)
-            if card_index < 0 or card_index >= len(self._players_cards[player_turn]):
-                raise IndexError(f"Card index {card_index} is out of range for player {player_turn}")
-            card = self._players_cards[player_turn][card_index]
-            self.add_played_card(player_turn, card)
-            new_gs['player-cards'].remove(card)
-            is_gold = self._game_board.peak_goal_card(int(index))
-            self._known_cards[player_turn][int(index)] = is_gold
-            if y == 0:
-                # Reveal Truth
-                self._report_card(player_turn, is_gold, int(index))
-            elif y == 1:
-                # Reveal Lie
-                self._report_card(player_turn, not is_gold, int(index))
-            new_gs['reported-cards'] = self._reported_cards
-            self.previous_move = f"Map for goal index:{index}"
-            self.previous_player = self.player_type_list[player_turn]
+            self._play_map(player_turn, new_gs, row, col, card_index)
+
+        # If deck is not empty, draw a card
         if not new_gs['deck-status']:
             new_card = self._deck.draw()
             new_gs['player-cards'].append(new_card)
+
         new_gs['player-turn'] = (player_turn + 1) % len(self._players)
 
         return new_gs
 
+    # Generates the state transition for the agent
     def state_transition(self, agent_actuators):
         game_state = self.get_game_state()
 

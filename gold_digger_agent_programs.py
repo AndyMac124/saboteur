@@ -1,62 +1,41 @@
+"""
+gold_digger_agent_programs.py
+"""
+
 import random
 
 from playing_cards import Names
 from legal_moves import get_legal_actions_gs
+from deck import possible_cards, dead_ends
 
-possible_cards = {
-    Names.MAP: 9,
-    Names.SABOTAGE: 9,
-    Names.MEND: 9,
-    Names.DYNAMITE: 3,
-    Names.CROSS_SECTION: 5,
-    Names.VERTICAL_PATH: 4,
-    Names.HORIZONTAL_PATH: 3,
-    Names.TURN_LEFT: 4,
-    Names.TURN_RIGHT: 5,
-    Names.VERT_T: 5,
-    Names.HOR_T: 5,
-    Names.DE_ALL: 1,
-    Names.DE_3_E: 1,
-    Names.DE_3_S: 1,
-    Names.DE_EW: 1,
-    Names.DE_N: 1,
-    Names.DE_NS: 1,
-    Names.DE_WN: 1,
-    Names.DE_WS: 1,
-    Names.DE_W: 1,
-}
+throwing_cards = [
+    Names.TURN_RIGHT,
+    Names.TURN_LEFT,
+    Names.VERTICAL_PATH,
+    Names.HORIZONTAL_PATH,
+    Names.VERT_T,
+    Names.HOR_T,
+    Names.CROSS_SECTION,
+]
+
+best_cards_down = [
+    Names.CROSS_SECTION,
+    Names.HOR_T,
+    Names.HORIZONTAL_PATH,
+    Names.TURN_RIGHT,
+    Names.VERT_T,
+]
+
+best_cards_down_rotated = [
+    Names.CROSS_SECTION,
+    Names.HOR_T,
+    Names.HORIZONTAL_PATH,
+    Names.TURN_LEFT,
+]
+
 
 def gold_digger_agent_program(percepts, actuators):
-    global possible_cards
-
     actions = []
-
-    throwing_cards = [
-        Names.TURN_RIGHT,
-        Names.TURN_LEFT,
-        Names.VERTICAL_PATH,
-        Names.HORIZONTAL_PATH,
-        Names.VERT_T,
-        Names.HOR_T,
-        Names.CROSS_SECTION,
-    ]
-
-    best_cards_down = [
-        Names.CROSS_SECTION,
-        Names.HOR_T,
-        Names.HORIZONTAL_PATH,
-        Names.TURN_RIGHT,
-        Names.VERT_T,
-    ]
-
-    best_cards_down_rotated = [
-        Names.CROSS_SECTION,
-        Names.HOR_T,
-        Names.HORIZONTAL_PATH,
-        Names.TURN_LEFT,
-    ]
-
-    dead_ends = [Names.DE_ALL, Names.DE_3_E, Names.DE_3_S, Names.DE_EW, Names.DE_N, Names.DE_NS, Names.DE_WN, Names.DE_WS, Names.DE_W]
 
     gs = {
         'game-board': percepts['game-board-sensor'],
