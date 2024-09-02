@@ -2,42 +2,14 @@
 gold_digger_agent_programs.py
 """
 
-import random
-
 from playing_cards import Names
 from legal_moves import get_legal_actions_gs
 from deck import possible_cards, dead_ends
+from logical_gold_digger import play_a_logical_card
 
-throwing_cards = [
-    Names.TURN_RIGHT,
-    Names.TURN_LEFT,
-    Names.VERTICAL_PATH,
-    Names.HORIZONTAL_PATH,
-    Names.VERT_T,
-    Names.HOR_T,
-    Names.CROSS_SECTION,
-]
-
-best_cards_down = [
-    Names.CROSS_SECTION,
-    Names.HOR_T,
-    Names.HORIZONTAL_PATH,
-    Names.TURN_RIGHT,
-    Names.VERT_T,
-]
-
-best_cards_down_rotated = [
-    Names.CROSS_SECTION,
-    Names.HOR_T,
-    Names.HORIZONTAL_PATH,
-    Names.TURN_LEFT,
-]
-
-
-def gold_digger_agent_program(percepts, actuators):
-    actions = []
-
-    gs = {
+# Get the current game state
+def get_game_state(percepts):
+    return {
         'game-board': percepts['game-board-sensor'],
         'player-turn': percepts['turn-taking-indicator'],
         'mining-state': percepts['can-mine-sensor'],
@@ -49,51 +21,53 @@ def gold_digger_agent_program(percepts, actuators):
         'flipped-cards': percepts['flipped-cards-sensor']
     }
 
-    board = gs['game-board']  # Key is (x, y), value is TableCard
-    cards = gs['player-cards']  # List of TableCard
-    player = gs['player-turn']  # Int
-    mining = gs['mining-state']  # List of Bool
-    reported = gs['reported-cards']  # Dict of player_id and  tuple (goal_index, bool)
-    cards_played = gs['cards-played']  # Dict of player_id and list of cards played
-    deck_is_empty = gs['deck-status']  # Bool (isEmpty)
-    known_cards = gs['known-cards']  # List of list of bools
-    flipped_cards = gs['flipped-cards']
 
-    legal_moves = get_legal_actions_gs(board, mining[player], cards, flipped_cards)
-
-    #print(f"REPORTED CARDS: {reported}")
-
-    if len(cards) == 0 or len(legal_moves) == 0:
-        move = f"pass-0-0-0"
-        actions.append(move)
-        return actions
-
-    # Dictionary of players and suspected saboteur
-    suspected_saboteur = {}
-    for i in range(8):
-        suspected_saboteur[i] = False
-
+# Creates a dictionary of all players and whether suspected of being a GoldDigger
+def set_suspected_golddigger(player_index):
     suspected_golddigger = {}
     for i in range(8):
         suspected_golddigger[i] = False
-        suspected_golddigger[player] = True
+    suspected_golddigger[player_index] = True
+    return suspected_golddigger
 
-    # List of all possible cards, remove what is on the board
+
+# Creates a dictionary of all players and whether suspected of being a Saboteur
+def set_suspected_saboteur():
+    suspected_saboteur = {}
+    for i in range(8):
+        suspected_saboteur[i] = False
+    return suspected_saboteur
+
+
+# Creates a dictionary of all possible cards and the number of them and removes what has been played
+def set_cards_unplayed(cards_played):
     cards_unplayed = possible_cards.copy()
     for key in cards_played:
         played = cards_played[key]
         for card in played:
             cards_unplayed[card] -= 1
+    return cards_unplayed
 
-    # Dictionary of goal cards we have ruled out
-    goal_cards = [(14,8), (14,10), (14,12)]
-    gold_idx = -1
-    for loc in goal_cards:
-            if board[loc].name is not Names.GOAL:
-                goal_cards[goal_cards.index(loc)] = None
+# Attempt to deduce the gold diggers
+def deduce_golddiggers(gold_idx, reported, suspected_golddigger):
+    for i in range(8):
+        if reported[i][0] == gold_idx and reported[i][1]:
+            suspected_golddigger[i] = True
+    return suspected_golddigger
 
-    # Location of gold card
+# Attempt to deduce the saboteurs
+def deduce_saboteurs(gold_idx, reported, suspected_saboteur):
+    for i in range(8):
+        if reported[i][0] == gold_idx and not reported[i][1]:
+            suspected_saboteur[i] = True
+        elif reported[i][0] != gold_idx and reported[i][1]:
+            suspected_saboteur[i] = True
+    return suspected_saboteur
+
+# Attempt to deduce the location of the gold card using our known cards
+def deduce_gold_loc(known_cards, goal_cards):
     gold_loc = None
+    gold_idx = -1
 
     for i in range(3):
         if known_cards[i] is not None:
@@ -102,7 +76,6 @@ def gold_digger_agent_program(percepts, actuators):
             else:
                 gold_loc = goal_cards[i]
                 gold_idx = i
-                #print(f" GOLD LOC = {gold_loc}")
 
     if gold_loc is None:
         possibles = 0
@@ -114,242 +87,79 @@ def gold_digger_agent_program(percepts, actuators):
                 if loc is not None:
                     gold_loc = loc
                     gold_idx = goal_cards.index(loc)
-                    #print(f"POSSIBLES ONE: GOLD LOC = {gold_loc}")
 
-    # If we know the gold position and another player has reported it as true
-    # They are likely a GoldDigger
-    if gold_loc is not None:
-        for i in range(8):
-            if reported[i][0] == gold_idx and reported[i][1]:
-                suspected_golddigger[i] = True
+    return gold_loc, gold_idx
 
-    # If we know the gold position and another player has reported it as false
-    if gold_loc is not None:
-        for i in range(8):
-            if reported[i][0] == gold_idx and not reported[i][1]:
-                suspected_saboteur[i] = True
-            elif reported[i][0] != gold_idx and reported[i][1]:
-                suspected_saboteur[i] = True
-
-    #print(f"SUSPECTED SABOTEUR: {suspected_saboteur}")
-    #print(f"SUSPECTED GOLDDIGGER: {suspected_golddigger}")
+# Rule out goal cards based on suspected golddigger reports
+def use_golddigger_reports(reported, suspected_golddigger, goal_cards):
     # If trusted GoldDigger reports a card as false, remove it.
+    for i in range(8):
+        if reported[i][0] is not None:
+            if suspected_golddigger[i]:
+                if not reported[i][1]:
+                    for j in range(3):
+                        if goal_cards[j] == reported[i][0]:
+                            goal_cards[j] = None
+    return goal_cards
+
+
+# Gold Digger Agent Program
+def gold_digger_agent_program(percepts, actuators):
+    actions = []
+
+    # Get game state and set variables
+    gs = get_game_state(percepts)
+    board = gs['game-board']  # Key is (x, y), value is TableCard
+    cards = gs['player-cards']  # List of TableCard
+    player = gs['player-turn']  # Int
+    mining = gs['mining-state']  # List of Bool
+    reported = gs['reported-cards']  # Dict of player_id and  tuple (goal_index, bool)
+    cards_played = gs['cards-played']  # Dict of player_id and list of cards played
+    deck_is_empty = gs['deck-status']  # Bool (isEmpty)
+    known_cards = gs['known-cards']  # List of list of bools
+    flipped_cards = gs['flipped-cards']  # List of tuples (x, y)
+
+    # Get all legal moves
+    legal_moves = get_legal_actions_gs(board, mining[player], cards, flipped_cards)
+
+    # If no cards or no legal moves, we pass
+    if len(cards) == 0 or len(legal_moves) == 0:
+        move = f"pass-0-0-0"
+        actions.append(move)
+        return actions
+
+    # Dictionaries of players and bools of whether suspected
+    suspected_saboteur = set_suspected_saboteur()
+    suspected_golddigger = set_suspected_golddigger(player)
+
+    # List of all possible cards and removing what is on the board
+    cards_unplayed = set_cards_unplayed(cards_played)
+
+    # Dictionary of goal cards we have ruled out
+    goal_cards = [(14,8), (14,10), (14,12)]
+    gold_idx = -1
+    for loc in goal_cards:
+            if board[loc].name is not Names.GOAL:
+                goal_cards[goal_cards.index(loc)] = None
+
+    # Location of gold card
+    gold_loc = None
+
+    # Attempt to deduce gold location from known cards
     if gold_loc is None:
-        for i in range(8):
-            if reported[i][0] is not None:
-                if suspected_golddigger[i]:
-                    if not reported[i][1]:
-                        for j in range(3):
-                            if goal_cards[j] == reported[i][0]:
-                                goal_cards[j] = None
+        gold_loc, gold_idx = deduce_gold_loc(known_cards, goal_cards)
 
-    #print(f"Goal Cards: {goal_cards}")
+    # Attempt to deduce saboteurs and golddiggers
+    if gold_loc is not None:
+        suspected_golddigger = deduce_golddiggers(gold_idx, reported, suspected_golddigger)
+        suspected_saboteur = deduce_saboteurs(gold_idx, reported, suspected_saboteur)
 
-    # If player suspected of being GoldDigger, and player is not mining, play mend on them
-    for p in range(8):
-        if suspected_golddigger[p] and not mining[p]:
-            for c in range(4):
-                action = (f"mend-{0}-{p}-{c}")
-                if action in legal_moves:
-                    actions.append(action)
-                    #print(f"ACTION: {action}")
-                    return actions
-
-    # If player suspected of being Saboteur, we will play Sabotage on them
-    for p in range(8):
-        if suspected_saboteur[p] and mining[p]:
-            for c in range(4):
-                action = (f"sabotage-{0}-{p}-{c}")
-                if action in legal_moves:
-                    actions.append(action)
-                    #print(f"ACTION: {action}")
-                    return actions
-
-    # If we have a Map card, play it. Could strongly help us find our enemies and allies
+    # Attempt to deduce gold location from reports and known player types
     if gold_loc is None:
-        for i in range(3):
-            if goal_cards[i] is not None:
-                for j in range(4):
-                    for move in legal_moves:# Assuming the wildcard can be any value from 0 to 3
-                        if move == f"map-0-{i}-{j}":
-                            actions.append(move)
-                            #print(f"ACTION: {move}")
-                            return actions
+        goal_cards = use_golddigger_reports(reported, suspected_golddigger, goal_cards)
 
-    # Get the closest cell to center goal or gold card
-    closest_card = None
-    target = None if gold_loc is None else gold_loc
-    if target is None:
-        if goal_cards[1] is not None:
-            target = goal_cards[1]
-        elif goal_cards[0] is not None:
-            target = goal_cards[0]
-        elif goal_cards[2] is not None:
-            target = goal_cards[2]
-
-
-
-    for cell in board:
-        #if str(board[cell]) == 'NONE' and str(board[cell]) not in [str(Names.GOAL), str(Names.GOLD)]:
-        if board[cell] is not None and board[cell].name != Names.GOAL and board[cell].name != Names.GOLD:
-            if closest_card is None:
-                closest_card = cell
-            else:
-                if abs(cell[0] - target[0]) < abs(closest_card[0] - target[0]):
-                    closest_card = cell
-                if cell[0] == target[0]:
-                    if abs(cell[1] - target[1]) <= abs(closest_card[1] - target[1]):
-                        closest_card = cell
-
-    # If closest card to goal is dead end, play dynamite
-    x = closest_card[0]
-    y = closest_card[1]
-    closest = board[closest_card]
-    #print(f"Closest card to goal: {closest.name} with {target[0]} and {target[1]}")
-    #print(legal_moves)
-
-    # startCard = board[(6, 10)]
-    # if startCard.name is Names.START:
-    # for card in cards: card.name is Names.CROSS_SECTION
-
-    if closest.name in dead_ends:
-        #print("Closest card is dead end")
-        for move in legal_moves:
-            if move.startswith(f"dynamite-{x}-{y}"):
-                actions.append(move)
-                #print(f"ACTION: {move}")
-                return actions
-
-    # if dead end in lowest row, blow it out.
-    for move in legal_moves:
-        for i in range(-3, 3):
-            if move.startswith(f"dynamite-{x}-{y+i}"):
-                if board[(x, y+i)].name in dead_ends:
-                    actions.append(move)
-                    #print(f"ACTION: {move}")
-                    return actions
-
-    if x - target[0] < 0:
-        #print("TARGET IS DOWN")
-        #print(f"CHECKING FOR: place-{x+1}")
-        for move in legal_moves:
-            index = move[-1]
-            ind = int(index)
-            c = cards[ind]
-            if c.name in best_cards_down:
-                for i in range(-4, 4):
-                    if y+i < 20 and y+i >= 0:
-                        if move.startswith(f"place-{x+1}-{y+i}"):
-                            actions.append(move)
-                            #print(f"ACTION: {move}")
-                            return actions
-            elif c.name in best_cards_down_rotated:
-                for i in range(-4, 4):
-                    if y+i < 20 and y+i >= 0:
-                        if move.startswith(f"rotate-{x+1}-{y+i}"):
-                            actions.append(move)
-                            #print(f"ACTION: {move}")
-                            return actions
-
-    if x - target[0] < 0:
-        for move in legal_moves:
-            for i in range(-4, 4):
-                if y+i < 20 and y+i >= 0:
-                    if move.startswith(f"place-{x}-{y+i}") or move.startswith(f"rotate-{x}-{y+i}" or move.startswith(f"place-{x}-{y-i}") or move.startswith(f"rotate-{x}-{y-i}")):
-                        actions.append(move)
-                        #print(f"ACTION: {move}")
-                        return actions
-
-    # If card on lowest row is turn right and is in flipped card, dynamite
-    for i in range(-4, 4):
-        if y+i < 20 and y+i >= 0:
-            card = board[(x, y+i)]
-            if card is not None:
-                if card.name == Names.TURN_RIGHT and (x, y+i) in flipped_cards:
-                    for move in legal_moves:
-                        if move.startswith(f"dynamite-{x}-{y+i}"):
-                            actions.append(move)
-                            return actions
-                # If card on lowest row is turn left and is NOT in flipped card, dynamite
-                if card.name == Names.TURN_LEFT and (x, y+i) not in flipped_cards:
-                    for move in legal_moves:
-                        if move.startswith(f"dynamite-{x}-{y+i}"):
-                            actions.append(move)
-                            return actions
-
-    if x - target[0] < 0:
-        for move in legal_moves:
-            for i in range(-4, 4):
-                if y+i < 20 and y+i >= 0:
-                    if move.startswith(f"place-{x-1}-{y+i}") or move.startswith(f"rotate-{x-1}-{y+i}" or move.startswith(f"place-{x-1}-{y-i}") or move.startswith(f"rotate-{x-1}-{y-i}")):
-                        actions.append(move)
-                        return actions
-
-    if y - target[1] > 0:
-        # Go left
-        #print("TARGET IS LEFT")
-        for move in legal_moves:
-            if move.startswith(f"place-{x}-{y-1}") or move.startswith(f"rotate-{x}-{y-1}"):
-                for card in cards:
-                    if not card.name == Names.TURN_RIGHT:
-                        actions.append(move)
-                        #print(f"ACTION: {move}")
-                        return actions
-
-    if y - target[1] < 0:
-        # Go right
-        #print("TARGET IS RIGHT")
-        for move in legal_moves:
-            if move.startswith(f"place-{x}-{y+1}") or move.startswith(f"rotate-{x}-{y+1}"):
-                for card in cards:
-                    if card.name == Names.TURN_LEFT:
-                        actions.append(move)
-                        #print(f"ACTION: {move}")
-                        return actions
-
-    if x - target[0] > 0:
-        # Go up
-        #print("TARGET IS UP")
-        for move in legal_moves:
-            if move.startswith(f"place-{x-1}-{y}") or move.startswith(f"rotate-{x-1}-{y}"):
-                for card in cards:
-                    if card.name == Names.CROSS_SECTION:
-                        actions.append(move)
-                        #print(f"ACTION: {move}")
-                        return actions
-
-    #print("CHECKING for cross section")
-    # Play the closest path card to the goal row prioritising higher ranked cards
-    for move in legal_moves:
-        if move.startswith(f"place-{x+1}-{y}") or move.startswith(f"place-{x}-{y+1}") or move.startswith(f"rotate-{x}-{y-1}"):
-            for card in cards:
-                if card.name == Names.CROSS_SECTION:
-                    actions.append(move)
-                    #print(f"ACTION: {move}")
-                    return actions
-
-    # Throw away dead end cards
-    for move in legal_moves:
-        if move.startswith("discard"):
-            for card in cards:
-                if card.name in dead_ends:
-                    #print("Throwing Dead end")
-                    actions.append(move)
-                    return actions
-
-    for move in legal_moves:
-        if move.startswith("place") or move.startswith("rotate"):
-            actions.append(move)
-            return actions
-
-    #print("THROWING least ranked card")
-    for i in range(7):
-        for j in range(len(cards)):
-            if cards[j].name == throwing_cards[i]:
-                actions.append(f"discard-0-0-{j}")
-                return actions
-
-    #print("No actions found")
-    actions.append(random.choice(legal_moves))
+    # Choose a logical action
+    action = play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, flipped_cards)
+    actions.append(action)
 
     return actions

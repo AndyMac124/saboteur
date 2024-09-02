@@ -7,8 +7,10 @@ Reference: slightly modified version of the deck.py file from the starter zip fi
 from playing_cards import TableCard, ActionCard, Names
 import random
 
+# List of all the dead end card names
 dead_ends = [Names.DE_ALL, Names.DE_3_E, Names.DE_3_S, Names.DE_EW, Names.DE_N, Names.DE_NS, Names.DE_WN, Names.DE_WS, Names.DE_W]
 
+# Dictionary of the full deck with number of each card
 possible_cards = {
     Names.MAP: 9,
     Names.SABOTAGE: 9,

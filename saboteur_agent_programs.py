@@ -75,11 +75,12 @@ def saboteur_agent_program(percepts, actuators):
     suspected_saboteur = {}
     for i in range(8):
         suspected_saboteur[i] = False
+        suspected_saboteur[player] = True
 
+    # Dictionary of players and suspected gold digger
     suspected_golddigger = {}
     for i in range(8):
         suspected_golddigger[i] = False
-        suspected_golddigger[player] = True
 
     # List of all possible cards, remove what is on the board
     cards_unplayed = possible_cards.copy()
