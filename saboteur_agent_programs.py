@@ -11,6 +11,7 @@ from logical_saboteur import play_a_logical_card
 from deceptive_saboteur import play_deceptively
 from shared_agent_functions import setup_game_info, get_game_state, deduce_player_types, deduce_gold_loc, use_golddigger_reports, assess_board
 from game_board import GOAL_LOCATIONS
+from shared import DEBUG
 
 # List of cards a gold digger would play, saboteurs would throw these out.
 def update_golddiggers(suspected_golddigger, cards_played, player):
@@ -72,15 +73,17 @@ def saboteur_agent_program(percepts, actuators):
         goal_cards = use_golddigger_reports(reported, suspected_golddigger, goal_cards)
 
     x, y, closest, target = assess_board(board, gold_loc, goal_cards)
-    print(f"{x}, {y}, {target}")
-    if x - target[0] < -2:
-        print("Playing deceptively")
+
+    if x - target[0] < -3:
+        if DEBUG:
+            print("Saboteur Agent playing deceptively")
         # Choose a deceptive action (They aren't close to the goal cards yet)
         action = play_deceptively(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, x, y, closest, target)
         actions.append(action)
         return actions
 
-    print("playing logically")
+    if DEBUG:
+        print("Saboteur Agent playing logically")
     # Choose a logical action (They are close to the goal cards)
     action = play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, x, y, closest, target)
     actions.append(action)

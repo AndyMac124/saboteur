@@ -7,6 +7,7 @@ It integrates with the une_ai package and as such covers a lot of the same funct
 
 import random
 
+from shared import DEBUG
 from saboteur_game import SaboteurGame
 from saboteur_game_environment import SaboteurGameEnvironment
 from saboteur_agent import SaboteurAgent
@@ -37,5 +38,7 @@ if __name__ == '__main__':
         players[i] = player
         # Adding player, players index, and player type
         game_environment.add_player_with_cards(player, i, possible_players[i])
+        if DEBUG:
+            print(f"Player {i} is a {possible_players[i]}")
 
     game = SaboteurGame(game_environment, players)

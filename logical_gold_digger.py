@@ -4,7 +4,7 @@ logical_gold_digger.py
 
 import random
 
-from playing_cards import Names
+from playing_cards import Names, TableCard
 from deck import dead_ends
 
 # Cards that are best to throw away
@@ -224,7 +224,8 @@ def discard_a_throwing_card(legal_moves, cards):
                 return f"discard-0-0-{j}"
     return None
 
-
+# Calculates at the absolute distance from each legal placement to the target card, returns closest
+# Excludes dead-end cards
 def play_closest_card_to_goal(legal_moves, target, cards):
     t_x = target[0]
     t_y = target[1]
@@ -234,17 +235,16 @@ def play_closest_card_to_goal(legal_moves, target, cards):
         if move.startswith("place") or move.startswith("rotate"):
             _, row_str, col_str, c_str = move.split('-')
             c = int(c_str)
-            for card in cards:
-                if card[c].name in dead_ends:
-                    continue
+            if cards[c].name in dead_ends:
+                continue
             row = int(row_str)
             col = int(col_str)
             abs_dist = abs(row - t_x) + abs(col - t_y)
             if abs_dist < min_dist:
                 min_dist = abs_dist
                 best_move = move
-            if best_move is not None:
-                return best_move
+    if best_move is not None:
+        return best_move
     return None
 
 

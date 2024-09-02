@@ -6,6 +6,8 @@ Reference: This class was built off the Connect Four Game class by Johnathon Vit
 
 import pygame
 
+from shared import DEBUG
+
 BLACK = (30, 30, 30)
 WHITE = (255, 255, 255)
 DISPLAY_WIDTH = 1120
@@ -123,7 +125,8 @@ class SaboteurGame:
             move = self._environment.get_previous_move()
             player_type = self._environment.get_last_player_type()
             self._draw_text("Previous move was: {0} by a {1}".format(move, player_type), 10, 'right', 'bottom', 15)
-            print("Previous move was: {0} by a {1}".format(move, player_type))
+            if DEBUG:
+                print("Previous move was: {0} by a {1}".format(move, player_type))
 
             # Padding for the images of player cards in hand
             x_padding = 200
