@@ -7,6 +7,8 @@ from typing import Dict, Tuple, Optional
 from playing_cards import Card, Names, dirs, DeadEndCard, SpecialCard, StartCard, GoldCard, GoalCard, TableCard, CrossSectionCard, VerticalPathCard, HorizontalPathCard, TurnLeftCard, TurnRightCard, VertTCard, HorTCard, DEAllCard, DE3ECard, DE3SCard, DEEWCard, DENCard, DENSCard, DEWNCard, DEWSCard, DEWCards
 import random
 
+GOAL_LOCATIONS = [(14, 8), (14, 10), (14, 12)]
+
 # Class for the game board
 class GameBoard():
 
@@ -16,7 +18,7 @@ class GameBoard():
         self._board[(6, 10)] = StartCard()
         self.start_point = (6, 10)
         self._flippedCards = []  # For storing which board locations have been rotated 180 degrees
-        self.goal_locations = [(14, 8), (14, 10), (14, 12)]
+        self.goal_locations = GOAL_LOCATIONS.copy()
         gold_idx = random.choice([0, 1, 2])
         self.gold_loc = self.goal_locations[gold_idx] # Setting gold location for checking later
         # Setting goal cards
