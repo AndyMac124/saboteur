@@ -5,7 +5,7 @@ Shared functions between Gold Digger and Saboteur Agents
 """
 
 from deck import possible_cards
-from playing_cards import Names
+from shared import Names
 
 def setup_game_info(cards_played, saboteur, golddigger):
 

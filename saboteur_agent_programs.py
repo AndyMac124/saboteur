@@ -1,12 +1,13 @@
 """
 saboteur_agent_programs.py
+
+Purpose: Executes the think component of the play step when the players turn is of type saboteur_agent_program.
 """
 
 import random
 
-from playing_cards import Names
+from shared import Names
 from legal_moves import get_legal_actions_gs
-from deck import possible_cards, dead_ends
 from logical_saboteur import play_a_logical_card
 from deceptive_saboteur import play_deceptively
 from shared_agent_functions import setup_game_info, get_game_state, deduce_player_types, deduce_gold_loc, use_golddigger_reports, assess_board

@@ -1,44 +1,14 @@
 """
 playing_cards.py
+
+Purpose: Creating instances of various types of playing cards
 """
 
-from abc import ABC
-from enum import Enum
 import pygame
 
-# Enum for the surrounding directions
-class dirs(Enum):
-    NORTH = 1
-    SOUTH = 2
-    EAST = 3
-    WEST = 4
+from abc import ABC
+from shared import Dirs, Names
 
-# Enums for the card names
-class Names(Enum):
-    NONE = 1
-    START = 2
-    GOAL = 3
-    GOLD = 4
-    MAP = 5
-    SABOTAGE = 6
-    MEND = 7
-    DYNAMITE = 8
-    CROSS_SECTION = 9
-    VERTICAL_PATH = 10
-    HORIZONTAL_PATH = 11
-    TURN_LEFT = 12
-    TURN_RIGHT = 13
-    VERT_T = 14
-    HOR_T = 15
-    DE_ALL = 16
-    DE_3_E = 17
-    DE_3_S = 18
-    DE_EW = 19
-    DE_N = 20
-    DE_NS = 21
-    DE_WN = 22
-    DE_WS = 23
-    DE_W = 24
 
 # Super class for all cards in game
 class Card(ABC):
@@ -53,39 +23,39 @@ class Card(ABC):
     @staticmethod
     def static_access_points(card_name, flipped=False):
         access_points_map = {
-            Names.START: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
-            Names.GOAL: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
-            Names.GOLD: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
-            Names.CROSS_SECTION: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
-            Names.VERTICAL_PATH: [dirs.EAST, dirs.WEST],
-            Names.HORIZONTAL_PATH: [dirs.NORTH, dirs.SOUTH],
-            Names.TURN_LEFT: [dirs.NORTH, dirs.WEST],
-            Names.TURN_RIGHT: [dirs.SOUTH, dirs.WEST],
-            Names.VERT_T: [dirs.WEST, dirs.SOUTH, dirs.EAST],
-            Names.HOR_T: [dirs.NORTH, dirs.EAST, dirs.SOUTH],
-            Names.DE_ALL: [dirs.NORTH, dirs.SOUTH, dirs.EAST, dirs.WEST],
-            Names.DE_3_E: [dirs.NORTH, dirs.EAST, dirs.SOUTH],
-            Names.DE_3_S: [dirs.EAST, dirs.SOUTH, dirs.WEST],
-            Names.DE_EW: [dirs.EAST, dirs.WEST],
-            Names.DE_N: [dirs.NORTH],
-            Names.DE_NS: [dirs.NORTH, dirs.SOUTH],
-            Names.DE_WN: [dirs.NORTH, dirs.WEST],
-            Names.DE_WS: [dirs.SOUTH, dirs.WEST],
-            Names.DE_W: [dirs.WEST],
+            Names.START: [Dirs.NORTH, Dirs.SOUTH, Dirs.EAST, Dirs.WEST],
+            Names.GOAL: [Dirs.NORTH, Dirs.SOUTH, Dirs.EAST, Dirs.WEST],
+            Names.GOLD: [Dirs.NORTH, Dirs.SOUTH, Dirs.EAST, Dirs.WEST],
+            Names.CROSS_SECTION: [Dirs.NORTH, Dirs.SOUTH, Dirs.EAST, Dirs.WEST],
+            Names.VERTICAL_PATH: [Dirs.EAST, Dirs.WEST],
+            Names.HORIZONTAL_PATH: [Dirs.NORTH, Dirs.SOUTH],
+            Names.TURN_LEFT: [Dirs.NORTH, Dirs.WEST],
+            Names.TURN_RIGHT: [Dirs.SOUTH, Dirs.WEST],
+            Names.VERT_T: [Dirs.WEST, Dirs.SOUTH, Dirs.EAST],
+            Names.HOR_T: [Dirs.NORTH, Dirs.EAST, Dirs.SOUTH],
+            Names.DE_ALL: [Dirs.NORTH, Dirs.SOUTH, Dirs.EAST, Dirs.WEST],
+            Names.DE_3_E: [Dirs.NORTH, Dirs.EAST, Dirs.SOUTH],
+            Names.DE_3_S: [Dirs.EAST, Dirs.SOUTH, Dirs.WEST],
+            Names.DE_EW: [Dirs.EAST, Dirs.WEST],
+            Names.DE_N: [Dirs.NORTH],
+            Names.DE_NS: [Dirs.NORTH, Dirs.SOUTH],
+            Names.DE_WN: [Dirs.NORTH, Dirs.WEST],
+            Names.DE_WS: [Dirs.SOUTH, Dirs.WEST],
+            Names.DE_W: [Dirs.WEST],
             Names.DYNAMITE: []
         }
 
         if flipped:
-            access_points_map[Names.TURN_LEFT] = [dirs.SOUTH, dirs.EAST]
-            access_points_map[Names.TURN_RIGHT] = [dirs.NORTH, dirs.EAST]
-            access_points_map[Names.VERT_T] = [dirs.NORTH, dirs.EAST, dirs.WEST]
-            access_points_map[Names.HOR_T] = [dirs.NORTH, dirs.WEST, dirs.SOUTH]
-            access_points_map[Names.DE_3_E] = [dirs.NORTH, dirs.WEST, dirs.SOUTH]
-            access_points_map[Names.DE_3_S] = [dirs.NORTH, dirs.EAST, dirs.WEST]
-            access_points_map[Names.DE_WN] = [dirs.SOUTH, dirs.EAST]
-            access_points_map[Names.DE_WS] = [dirs.NORTH, dirs.EAST]
-            access_points_map[Names.DE_N] = [dirs.SOUTH]
-            access_points_map[Names.DE_W] = [dirs.EAST]
+            access_points_map[Names.TURN_LEFT] = [Dirs.SOUTH, Dirs.EAST]
+            access_points_map[Names.TURN_RIGHT] = [Dirs.NORTH, Dirs.EAST]
+            access_points_map[Names.VERT_T] = [Dirs.NORTH, Dirs.EAST, Dirs.WEST]
+            access_points_map[Names.HOR_T] = [Dirs.NORTH, Dirs.WEST, Dirs.SOUTH]
+            access_points_map[Names.DE_3_E] = [Dirs.NORTH, Dirs.WEST, Dirs.SOUTH]
+            access_points_map[Names.DE_3_S] = [Dirs.NORTH, Dirs.EAST, Dirs.WEST]
+            access_points_map[Names.DE_WN] = [Dirs.SOUTH, Dirs.EAST]
+            access_points_map[Names.DE_WS] = [Dirs.NORTH, Dirs.EAST]
+            access_points_map[Names.DE_N] = [Dirs.SOUTH]
+            access_points_map[Names.DE_W] = [Dirs.EAST]
 
         return access_points_map.get(card_name, [])
 

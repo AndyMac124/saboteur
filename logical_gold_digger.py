@@ -1,10 +1,12 @@
 """
 logical_gold_digger.py
+
+Purpose: Chooses an action for a Gold Digger based on logical rules for the Agents goal
 """
 
 import random
 
-from playing_cards import Names, TableCard
+from shared import Names
 from deck import dead_ends
 
 # Cards that are best to throw away

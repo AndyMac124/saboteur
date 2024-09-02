@@ -2,11 +2,14 @@
 saboteur_game_environment.py
 
 Reference: This class was based off the ConnectFourEnvironment class from the COSC350 Assignment 2 by Johnathon Vitale.
+
+Purpose: Builds and controls the game state and transitions for the Saboteur game.
 """
 
 import random
 from typing import Dict, List, Optional
-from playing_cards import Card, Names
+from playing_cards import Card
+from shared import Names
 from legal_moves import is_connected_to_start
 from une_ai.models import GameEnvironment
 from game_board import GameBoard

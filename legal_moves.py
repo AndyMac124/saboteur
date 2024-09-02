@@ -1,8 +1,11 @@
 """
 legal_moves.py
+
+Purpose: Generates all legal moves for the given game state information
 """
 
-from playing_cards import Card, DeadEndCard, TableCard, ActionCard, GoalCard, Names, SpecialCard, dirs
+from playing_cards import Card, TableCard, ActionCard, GoalCard, SpecialCard
+from shared import Names, DECards, Dirs
 
 # Function to recursively call the DFS
 def is_connected_to_start(board, location, access, flipped_cards):
@@ -13,19 +16,6 @@ def is_connected_to_start(board, location, access, flipped_cards):
 def depth_first_search(board, location, seen, access, flipped_cards):
     if location == (6, 10):
         return True
-
-    # List of dead end enum names
-    DECards = [
-        Names.DE_ALL,
-        Names.DE_W,
-        Names.DE_N,
-        Names.DE_NS,
-        Names.DE_WS,
-        Names.DE_WN,
-        Names.DE_EW,
-        Names.DE_3_S,
-        Names.DE_3_E
-    ]
 
     # Add the current location so that we don't check it again
     seen.add(location)
@@ -42,23 +32,23 @@ def depth_first_search(board, location, seen, access, flipped_cards):
                 else:
                     next_access = Card.static_access_points(board[char].name)
                 if char is n:
-                    if dirs.SOUTH in next_access:
-                        if dirs.NORTH in access:
+                    if Dirs.SOUTH in next_access:
+                        if Dirs.NORTH in access:
                             if depth_first_search(board, char, seen, next_access, flipped_cards):
                                 return True
                 elif char is e:
-                    if dirs.WEST in next_access:
-                        if dirs.EAST in access:
+                    if Dirs.WEST in next_access:
+                        if Dirs.EAST in access:
                             if depth_first_search(board, char, seen, next_access, flipped_cards):
                                 return True
                 elif char is s:
-                    if dirs.NORTH in next_access:
-                        if dirs.SOUTH in access:
+                    if Dirs.NORTH in next_access:
+                        if Dirs.SOUTH in access:
                             if depth_first_search(board, char, seen, next_access, flipped_cards):
                                 return True
                 elif char is w:
-                    if dirs.EAST in next_access:
-                        if dirs.WEST in access:
+                    if Dirs.EAST in next_access:
+                        if Dirs.WEST in access:
                             if depth_first_search(board, char, seen, next_access, flipped_cards):
                                 return True
     return False
@@ -106,30 +96,30 @@ def is_valid_placement_gs(board, col, row, card, flipped_cards, flipped=False):
     # Then check if a path leads to a wall
     if is_within_boundary(n) and board[n] is not None:
         next_a = get_access_points(board, n, flipped_cards)
-        if dirs.SOUTH in next_a and dirs.NORTH not in access:
+        if Dirs.SOUTH in next_a and Dirs.NORTH not in access:
             return False
-        if dirs.SOUTH not in next_a and dirs.NORTH in access:
+        if Dirs.SOUTH not in next_a and Dirs.NORTH in access:
             return False
 
     if is_within_boundary(e) and board[e] is not None:
         next_a = get_access_points(board, e, flipped_cards)
-        if dirs.WEST in next_a and dirs.EAST not in access:
+        if Dirs.WEST in next_a and Dirs.EAST not in access:
             return False
-        if dirs.WEST not in next_a and dirs.EAST in access:
+        if Dirs.WEST not in next_a and Dirs.EAST in access:
             return False
 
     if is_within_boundary(s) and board[s] is not None:
         next_a = get_access_points(board, s, flipped_cards)
-        if dirs.NORTH in next_a and dirs.SOUTH not in access:
+        if Dirs.NORTH in next_a and Dirs.SOUTH not in access:
             return False
-        if dirs.NORTH not in next_a and dirs.SOUTH in access:
+        if Dirs.NORTH not in next_a and Dirs.SOUTH in access:
             return False
 
     if is_within_boundary(w) and board[w] is not None:
         next_a = get_access_points(board, w, flipped_cards)
-        if dirs.EAST in next_a and dirs.WEST not in access:
+        if Dirs.EAST in next_a and Dirs.WEST not in access:
             return False
-        if dirs.EAST not in next_a and dirs.WEST in access:
+        if Dirs.EAST not in next_a and Dirs.WEST in access:
             return False
 
     return True

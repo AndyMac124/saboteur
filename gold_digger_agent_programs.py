@@ -1,10 +1,11 @@
 """
 gold_digger_agent_programs.py
+
+Purpose: Executes the think component of the play step when the players turn is of type gold_digger_agent_program.
 """
 
-from playing_cards import Names
 from legal_moves import get_legal_actions_gs
-from deck import possible_cards, dead_ends
+from shared import Names
 from logical_gold_digger import play_a_logical_card
 from shared_agent_functions import setup_game_info, get_game_state, deduce_player_types, deduce_gold_loc, use_golddigger_reports
 from game_board import GOAL_LOCATIONS

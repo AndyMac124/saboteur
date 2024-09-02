@@ -2,6 +2,8 @@
 saboteur_game.py
 
 Reference: This class was built off the Connect Four Game class by Johnathon Vitale from COSC350 Assignment 2.
+
+Purpose: Builds and updates the GUI for the game, as well as controlling the game loop.
 """
 
 import pygame

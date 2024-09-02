@@ -1,12 +1,14 @@
 """
 logical_saboteur.py
+
+Purpose: Chooses an action for a Saboteur based on logical rules for the Agents goal
 """
 
 import random
 
-from playing_cards import Names
-from legal_moves import get_legal_actions_gs
-from deck import possible_cards, dead_ends
+from shared import Names
+from deck import dead_ends
+
 
 throwing_cards = [
     Names.CROSS_SECTION,

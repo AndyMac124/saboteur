@@ -2,11 +2,14 @@
 saboteur_agent.py
 
 Reference: This file is based off the Agent Programs from COSC350 Tutorials by Johnathon Vitale.
+
+Purpose: Creates an Agent for the Saboteur Game, implements required abstract functions.
 """
 
 from une_ai.models import Agent
 from typing import Dict, Tuple, Optional
-from playing_cards import TableCard, ActionCard, Names, GoalCard, Card
+from playing_cards import TableCard, ActionCard, GoalCard
+from shared import Names
 
 class SaboteurAgent(Agent):
 

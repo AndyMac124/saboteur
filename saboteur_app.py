@@ -3,6 +3,8 @@ saboteur_app.py
 
 Reference: This game is based off the structure of the COSC350 code examples and assignments.
 It integrates with the une_ai package and as such covers a lot of the same functionality.
+
+Purpose: Initializes the Saboteur game environment and agents, and starts the game.
 """
 
 import random
