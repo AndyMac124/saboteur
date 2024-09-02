@@ -225,6 +225,29 @@ def discard_a_throwing_card(legal_moves, cards):
     return None
 
 
+def play_closest_card_to_goal(legal_moves, target, cards):
+    t_x = target[0]
+    t_y = target[1]
+    min_dist = 100
+    best_move = None
+    for move in legal_moves:
+        if move.startswith("place") or move.startswith("rotate"):
+            _, row_str, col_str, c_str = move.split('-')
+            c = int(c_str)
+            for card in cards:
+                if card[c].name in dead_ends:
+                    continue
+            row = int(row_str)
+            col = int(col_str)
+            abs_dist = abs(row - t_x) + abs(col - t_y)
+            if abs_dist < min_dist:
+                min_dist = abs_dist
+                best_move = move
+            if best_move is not None:
+                return best_move
+    return None
+
+
 def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, flipped_cards):
 
     # Mend, Sabotage, Map are priorities
@@ -291,6 +314,11 @@ def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspec
 
     # Throw away dead end cards
     action = discard_dead_end(legal_moves, cards)
+    if action is not None:
+        return action
+
+    # If nothing found, play the absolute closest card we can (not a dead end)
+    action = play_closest_card_to_goal(legal_moves, target, cards)
     if action is not None:
         return action
 

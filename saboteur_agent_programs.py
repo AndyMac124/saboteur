@@ -8,8 +8,19 @@ from playing_cards import Names
 from legal_moves import get_legal_actions_gs
 from deck import possible_cards, dead_ends
 from logical_saboteur import play_a_logical_card
-from shared_agent_functions import setup_game_info, get_game_state, deduce_player_types, deduce_gold_loc, use_golddigger_reports
+from deceptive_saboteur import play_deceptively
+from shared_agent_functions import setup_game_info, get_game_state, deduce_player_types, deduce_gold_loc, use_golddigger_reports, assess_board
 from game_board import GOAL_LOCATIONS
+
+# List of cards a gold digger would play, saboteurs would throw these out.
+def update_golddiggers(suspected_golddigger, cards_played, player):
+    bad_cards = [Names.HORIZONTAL_PATH, Names.CROSS_SECTION, Names.HOR_T]
+    for p in range(8):
+        if p != player and len(cards_played[p]) > 0:
+            for i in range(len(cards_played[p])):
+                if cards_played[p][i].name in bad_cards:
+                    suspected_golddigger[p] = True
+    return suspected_golddigger
 
 
 def saboteur_agent_program(percepts, actuators):
@@ -41,6 +52,9 @@ def saboteur_agent_program(percepts, actuators):
     # Dictionary of players and suspected gold digger
     unplayed, suspected_saboteur, suspected_golddigger = setup_game_info(cards_played, player, None)
 
+    # Update suspected gold diggers based on cards played
+    suspected_golddigger = update_golddiggers(suspected_golddigger, cards_played, player)
+
     # Dictionary of goal cards we have ruled out
     goal_cards = GOAL_LOCATIONS.copy()
     for loc in goal_cards:
@@ -57,8 +71,17 @@ def saboteur_agent_program(percepts, actuators):
         # Attempt to deduce gold location from reports and known player types
         goal_cards = use_golddigger_reports(reported, suspected_golddigger, goal_cards)
 
-    # Choose a logical action
-    action = play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, flipped_cards)
-    actions.append(action)
+    x, y, closest, target = assess_board(board, gold_loc, goal_cards)
+    print(f"{x}, {y}, {target}")
+    if x - target[0] < -2:
+        print("Playing deceptively")
+        # Choose a deceptive action (They aren't close to the goal cards yet)
+        action = play_deceptively(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, x, y, closest, target)
+        actions.append(action)
+        return actions
 
+    print("playing logically")
+    # Choose a logical action (They are close to the goal cards)
+    action = play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, x, y, closest, target)
+    actions.append(action)
     return actions

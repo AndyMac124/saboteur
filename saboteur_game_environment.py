@@ -26,7 +26,7 @@ class SaboteurGameEnvironment(GameEnvironment):
         self._players_cards: List[List[Optional[Card]]] = [[] for _ in range(8)]
         self._deck = Deck()
         self._reported_cards: Dict[int, tuple[Optional[int], bool]] = {i: (None, False) for i in range(8)}
-        self._played_cards = {}
+        self._played_cards: Dict[int, List[Optional[Card]]] = {i: [] for i in range(8)}
         self._known_cards = [[None, None, None] for _ in range(8)]
         self._winner = "Draw"
         self.previous_move = "None"

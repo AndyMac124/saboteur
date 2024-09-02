@@ -10,29 +10,18 @@ from deck import possible_cards, dead_ends
 
 throwing_cards = [
     Names.CROSS_SECTION,
-    Names.HOR_T,
     Names.HORIZONTAL_PATH,
-    Names.VERT_T,
-    Names.TURN_LEFT,
-    Names.TURN_RIGHT,
-    Names.VERTICAL_PATH
+    Names.MAP,
+    Names.MEND,
 ]
 
 best_cards_down = [
-    Names.DE_ALL,
-    Names.DE_N,
-    Names.DE_WN,
-    Names.DE_3_E,
-    Names.DE_3_S,
-    Names.TURN_LEFT,
     Names.VERTICAL_PATH,
+    Names.TURN_LEFT
 ]
 
 best_cards_down_rotated = [
-    Names.DE_ALL,
-    Names.DE_3_E,
-    Names.DE_3_S,
-    Names.DE_WS,
+    Names.TURN_RIGHT,
     Names.VERT_T,
 ]
 
@@ -132,11 +121,13 @@ def dynamite_cross_sections(legal_moves, x, y, board, target, cards):
     start_row = 6
     start_col = 10
     for i in range(3):
-        if board[(start_row, start_col+i)] is not None:
-            if board[(start_row, start_col+i)].name is Names.CROSS_SECTION:
-                for move in legal_moves:
-                    if move.startswith(f"dynamite-6-{10+i}"):
-                        return move
+        for j in range(-3, 3):
+            if board[(start_row+j, start_col+i)] is not None:
+                if (board[(start_row+j, start_col+i)].name is Names.CROSS_SECTION
+                        or board[(start_row+j, start_col+i)].name is Names.HOR_T):
+                    for move in legal_moves:
+                        if move.startswith(f"dynamite-{6+j}-{10+i}"):
+                            return move
     return None
 
 
@@ -150,14 +141,14 @@ def place_across_lowest_row(legal_moves, x, y):
 
 # Discard any card in throwing_cards list
 def discard_card(cards):
-    for i in range(7):
+    for i in range(4):
         for j in range(len(cards)):
             if cards[j].name == throwing_cards[i]:
                 return f"discard-0-0-{j}"
     return None
 
 # Logical rules for saboteur agent
-def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, x, y, closest, target):
+def play_deceptively(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, x, y, closest, target):
 
     # Mend, Sabotage, Map are priorities
     action = mend_player(legal_moves, suspected_saboteur, mining)
@@ -166,16 +157,6 @@ def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspec
     action = sabotage_player(legal_moves, suspected_golddigger, mining)
     if action is not None:
         return action
-    if gold_loc is None:
-        action = play_map_card(legal_moves, goal_cards)
-        if action is not None:
-            return action
-
-    # If closest card is not a dead end, dynamite it.
-    if closest.name not in dead_ends:
-        action = dynamite_dead_end(legal_moves, x, y)
-        if action is not None:
-            return action
 
     # If target is down, play a card that goes up or blocks the path
     if x - target[0] < 0:
