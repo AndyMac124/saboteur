@@ -60,7 +60,7 @@ class SaboteurGame:
                 y = row * CARD_HEIGHT
                 image = card.image
                 if (row, col) in flipped:
-                    flipped_image = pygame.transform.flip(image, True, True)  # Flip the image horizontally
+                    flipped_image = pygame.transform.flip(image, True, True)
                     self._display.blit(flipped_image, (x, y))
                 else:
                     self._display.blit(image, (x, y))
@@ -87,7 +87,6 @@ class SaboteurGame:
         winner = self._environment.get_winner()
         self._draw_text("GAME OVER", 100, 'center', 'middle', 45)
         self._draw_text("Winner: {0}".format(winner), 150, 'center', 'middle', 30)
-
 
     def _draw_text(self, text_message, padding_top, orientation='left', align='top', font_size=20):
         font = pygame.font.SysFont(self._font, font_size)

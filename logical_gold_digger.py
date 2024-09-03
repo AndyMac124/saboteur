@@ -7,6 +7,7 @@ Purpose: Chooses an action for a Gold Digger based on logical rules for the Agen
 import random
 
 from shared import Names
+from shared_agent_functions import assess_board
 from deck import dead_ends
 
 # Cards that are best to throw away
@@ -37,8 +38,9 @@ best_cards_down_rotated = [
     Names.TURN_LEFT,
 ]
 
+
+# If player suspected of being GoldDigger, and player is not mining, play mend on them
 def mend_player(legal_moves, suspected_golddigger, mining):
-    # If player suspected of being GoldDigger, and player is not mining, play mend on them
     for p in range(8):
         if suspected_golddigger[p] and not mining[p]:
             for c in range(4):
@@ -47,8 +49,9 @@ def mend_player(legal_moves, suspected_golddigger, mining):
                     return action
     return None
 
+
+# If player suspected of being Saboteur, we will play Sabotage on them
 def sabotage_player(legal_moves, suspected_saboteur, mining):
-    # If player suspected of being Saboteur, we will play Sabotage on them
     for p in range(8):
         if suspected_saboteur[p] and mining[p]:
             for c in range(4):
@@ -58,65 +61,34 @@ def sabotage_player(legal_moves, suspected_saboteur, mining):
     return None
 
 
+# Will play a map card if the goal card hasn't been set to None
+# (We set to None if we have previously peaked at it, or it's been flipped over)
 def play_map_card(legal_moves, goal_cards):
     for i in range(3):
         if goal_cards[i] is not None:
             for j in range(4):
-                for move in legal_moves:# Assuming the wildcard can be any value from 0 to 3
+                for move in legal_moves:
                     if move == f"map-0-{i}-{j}":
                         return move
     return None
 
 
-def set_target(gold_loc, goal_cards):
-    target = None if gold_loc is None else gold_loc
-
-    if target is None:
-        if goal_cards[1] is not None:
-            target = goal_cards[1]
-        elif goal_cards[0] is not None:
-            target = goal_cards[0]
-        elif goal_cards[2] is not None:
-            target = goal_cards[2]
-    return target
-
-
-def get_closest_card(board, target):
-    closest_card = None
-    for cell in board:
-        if board[cell] is not None and board[cell].name != Names.GOAL and board[cell].name != Names.GOLD:
-            if closest_card is None:
-                closest_card = cell
-            else:
-                if abs(cell[0] - target[0]) < abs(closest_card[0] - target[0]):
-                    closest_card = cell
-                if cell[0] == target[0]:
-                    if abs(cell[1] - target[1]) <= abs(closest_card[1] - target[1]):
-                        closest_card = cell
-
-    # If closest card to goal is dead end, play dynamite
-    x = closest_card[0]
-    y = closest_card[1]
-    closest = board[closest_card]
-
-    return x, y, closest
-
-
+# If the same row as the closest card has a dead end, dynamite it
 def dynamite_on_dead_end(legal_moves, board, closest, x, y):
     if closest.name in dead_ends:
         for move in legal_moves:
             if move.startswith(f"dynamite-{x}-{y}"):
                 return move
-
-        # If dead end in the lowest row, blow it out.
+    # If dead end in the lowest row, blow it out.
     for move in legal_moves:
         for i in range(-3, 3):
-            if move.startswith(f"dynamite-{x}-{y+i}"):
-                if board[(x, y+i)].name in dead_ends:
-                    return move
+            if y+i < 20 and y+i >= 0:
+                if move.startswith(f"dynamite-{x}-{y+i}"):
+                    if board[(x, y+i)].name in dead_ends:
+                        return move
     return None
 
-
+# If the target is down, attempt best moves, or any move down.
 def target_is_down(legal_moves, x, y, cards):
     for move in legal_moves:
         index = move[-1]
@@ -140,8 +112,8 @@ def target_is_down(legal_moves, x, y, cards):
     return None
 
 
+# If card on lowest row is turn right and is in flipped card, dynamite
 def dynamite_last_row(board, legal_moves, flipped_cards, x, y):
-    # If card on lowest row is turn right and is in flipped card, dynamite
     for i in range(-4, 4):
         if y+i < 20 and y+i >= 0:
             card = board[(x, y+i)]
@@ -158,6 +130,7 @@ def dynamite_last_row(board, legal_moves, flipped_cards, x, y):
     return None
 
 
+# Find a move one row above the lowest row
 def try_row_above_lowest(legal_moves, x, y):
     for move in legal_moves:
         for i in range(-4, 4):
@@ -167,6 +140,7 @@ def try_row_above_lowest(legal_moves, x, y):
     return None
 
 
+# If target is left, can we continue left?
 def target_is_left(legal_moves, x, y, cards):
     for move in legal_moves:
         if move.startswith(f"place-{x}-{y-1}") or move.startswith(f"rotate-{x}-{y-1}"):
@@ -176,6 +150,7 @@ def target_is_left(legal_moves, x, y, cards):
     return None
 
 
+# If target is right, can we continue right?
 def target_is_right(legal_moves, x, y, cards):
     for move in legal_moves:
         if move.startswith(f"place-{x}-{y+1}") or move.startswith(f"rotate-{x}-{y+1}"):
@@ -185,6 +160,7 @@ def target_is_right(legal_moves, x, y, cards):
     return None
 
 
+# If target is up, can we continue up?
 def target_is_up(legal_moves, x, y, cards):
     for move in legal_moves:
         if move.startswith(f"place-{x-1}-{y}") or move.startswith(f"rotate-{x-1}-{y}"):
@@ -194,6 +170,7 @@ def target_is_up(legal_moves, x, y, cards):
     return None
 
 
+# Play a cross-section around the closest card
 def play_a_cross_section(legal_moves, cards, x, y):
     for move in legal_moves:
         if move.startswith(f"place-{x+1}-{y}") or move.startswith(f"place-{x}-{y+1}") or move.startswith(f"rotate-{x}-{y-1}"):
@@ -203,6 +180,7 @@ def play_a_cross_section(legal_moves, cards, x, y):
     return None
 
 
+# Discard any dead end card
 def discard_dead_end(legal_moves, cards):
     for move in legal_moves:
         if move.startswith("discard"):
@@ -212,6 +190,7 @@ def discard_dead_end(legal_moves, cards):
     return None
 
 
+# Just place a card anywhere
 def place_any_card(legal_moves):
     for move in legal_moves:
         if move.startswith("place") or move.startswith("rotate"):
@@ -219,12 +198,14 @@ def place_any_card(legal_moves):
     return None
 
 
+# Discard any card in throwing cards list
 def discard_a_throwing_card(legal_moves, cards):
     for i in range(7):
         for j in range(len(cards)):
             if cards[j].name == throwing_cards[i]:
                 return f"discard-0-0-{j}"
     return None
+
 
 # Calculates at the absolute distance from each legal placement to the target card, returns closest
 # Excludes dead-end cards
@@ -267,9 +248,8 @@ def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspec
 
     # Now we set up to choose a card to place down
     # Get the closest cell to center goal or gold card
-    target = set_target(gold_loc, goal_cards)
     # Get the closest card to target and its (x, y) coordinates
-    x, y, closest = get_closest_card(board, target)
+    x, y, closest, target = assess_board(board, gold_loc, goal_cards)
 
     # Now we are looking for the best card to place down
     # If closest card to goal is dead end, play dynamite

@@ -93,8 +93,8 @@ class SaboteurGameEnvironment(GameEnvironment):
             'player-cards': self._players_cards[self._player_turn],
             'deck-status': self._deck.is_empty(),
             'deck': self._deck,
-            'reported-cards': self._reported_cards, # Dict of player_id and  tuple (goal_index, bool)
-            'played_cards': self._played_cards, # Dict of player_id and list of cards played
+            'reported-cards': self._reported_cards,
+            'played_cards': self._played_cards,
             'flipped_cards': self._game_board.get_flipped_cards(),
             'known_cards': self._known_cards[self._player_turn]
         }
