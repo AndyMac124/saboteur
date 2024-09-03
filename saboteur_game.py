@@ -125,7 +125,8 @@ class SaboteurGame:
             self._draw_text("Player turn: {0}".format(player_turn), 10, 'left', 'bottom', 15)
             move = self._environment.get_previous_move()
             player_type = self._environment.get_last_player_type()
-            self._draw_text("Previous move was: {0} by a {1}".format(move, player_type), 10, 'right', 'bottom', 15)
+            self._draw_text("Previous move was: {0} by a {1}".format(move, player_type),
+                            10, 'right', 'bottom', 15)
             if DEBUG:
                 print("Previous move was: {0} by a {1}".format(move, player_type))
 

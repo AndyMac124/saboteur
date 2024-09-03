@@ -56,7 +56,6 @@ class SaboteurAgent(Agent):
                     self.add_action('rotate-{0}-{1}-{2}'.format(i, j, k),
                                     lambda x=i, y=j, c=k: {'play-card': ('rotate', x, y, c)})
                     self.add_action('dynamite-{0}-{1}-{2}'.format(i, j, k), lambda x=i, y=j, c=k: {'play-card': ('dynamite', x, y, c)})
-
         for i in range(0, 4):
                 self.add_action('discard-{0}-{1}-{2}'.format(0, 0, i),
                                 lambda v=i: {'play-card': ('discard', 0, 0, v)})

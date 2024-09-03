@@ -131,7 +131,8 @@ def discard_card(cards):
 
 
 # Logical rules for saboteur agent
-def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, x, y, closest, target):
+def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc,
+                        goal_cards, x, y, closest, target):
 
     # Mend, Sabotage, Map are priorities
     action = mend_player(legal_moves, suspected_saboteur, mining)

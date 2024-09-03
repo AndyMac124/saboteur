@@ -4,7 +4,9 @@ Reference: Heavily modified version of the deck.py file from the starter zip fil
 """
 
 from typing import Dict, Tuple, Optional
-from playing_cards import StartCard, GoldCard, GoalCard, TableCard, CrossSectionCard, VerticalPathCard, HorizontalPathCard, TurnLeftCard, TurnRightCard, VertTCard, HorTCard, DEAllCard, DE3ECard, DE3SCard, DEEWCard, DENCard, DENSCard, DEWNCard, DEWSCard, DEWCards
+from playing_cards import (StartCard, GoldCard, GoalCard, TableCard, CrossSectionCard, VerticalPathCard,
+                           HorizontalPathCard, TurnLeftCard, TurnRightCard, VertTCard, HorTCard, DEAllCard, DE3ECard,
+                           DE3SCard, DEEWCard, DENCard, DENSCard, DEWNCard, DEWSCard, DEWCards)
 from shared import Names
 import random
 

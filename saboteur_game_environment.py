@@ -228,7 +228,8 @@ class SaboteurGameEnvironment(GameEnvironment):
         row = int(row_str)
         col = int(col_str)
         card_index = int(c)
-        assert card_index < len(self._players_cards[player_turn]), f"Card index {card_index} is out of range for player {player_turn}"
+        assert card_index < len(self._players_cards[player_turn]), (f"Card index {card_index} "
+                                                                    f"is out of range for player {player_turn}")
         assert card_index >= 0, f"Card index {card_index} is out of range for player {player_turn}"
 
         if action.startswith('place'):

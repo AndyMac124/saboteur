@@ -26,7 +26,8 @@ def depth_first_search(board, location, seen, access, flipped_cards):
     # Then find the access points, compare with the current cards access points to see if their paths join
     for char in (n, e, s, w):
         if is_within_boundary(char) and char not in seen and board[char] is not None:
-            if (board[char].name not in DECards) and (type(board[char]) is not GoalCard) and board[char].name is not Names.DYNAMITE:
+            if ((board[char].name not in DECards) and (type(board[char]) is not GoalCard) and board[char].name
+                    is not Names.DYNAMITE):
                 if char in flipped_cards:
                     next_access = Card.static_access_points(board[char].name, flipped=True)
                 else:
@@ -138,6 +139,8 @@ def get_legal_actions_gs(board, can_mine, player_cards, flipped_cards):
                 for r in range(20):
                     for c in range(20):
                         if board[(r, c)] is None:
+                            if r in [5, 7] and c in [9, 11] and card.name in DECards:
+                                continue
                             # Check each TableCard in normal and flipped state
                             if is_valid_placement_gs(board, c, r, card, flipped_cards):
                                 legal_actions.append(f'place-{r}-{c}-{i}')

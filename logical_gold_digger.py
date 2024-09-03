@@ -173,7 +173,8 @@ def target_is_up(legal_moves, x, y, cards):
 # Play a cross-section around the closest card
 def play_a_cross_section(legal_moves, cards, x, y):
     for move in legal_moves:
-        if move.startswith(f"place-{x+1}-{y}") or move.startswith(f"place-{x}-{y+1}") or move.startswith(f"rotate-{x}-{y-1}"):
+        if (move.startswith(f"place-{x+1}-{y}") or move.startswith(f"place-{x}-{y+1}")
+                or move.startswith(f"rotate-{x}-{y-1}")):
             for card in cards:
                 if card.name == Names.CROSS_SECTION:
                     return move
@@ -231,7 +232,8 @@ def play_closest_card_to_goal(legal_moves, target, cards):
     return None
 
 
-def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc, goal_cards, flipped_cards):
+def play_a_logical_card(legal_moves, cards, mining, suspected_golddigger, suspected_saboteur, board, gold_loc,
+                        goal_cards, flipped_cards):
 
     # Mend, Sabotage, Map are priorities
     action = mend_player(legal_moves, suspected_golddigger, mining)
