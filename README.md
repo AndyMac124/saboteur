@@ -3,7 +3,7 @@
 2. Download the zip file.
 2. Extract the zip file.
 3. Open the folder in the IDE of your choice.
-4. Set up the Python environment as per the UNE COSC350 lectures and assignments
+4. Set up the Python environment with the une_ai package.
 i.e. In your Python environment created for this unit.
 
 *Note: The program requires access to a GUI.*
