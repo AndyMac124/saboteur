@@ -1,9 +1,3 @@
-# COSC350 A3
-
-## Author: Andrew McKenzie
-## Student ID: 220263507
-#### Word Count: 198
-
 #### Setup Instructions:
 1. Ensure you have Python3 and the une_ai package installed on your machine.
 2. Download the zip file.
