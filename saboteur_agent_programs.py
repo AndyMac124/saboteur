@@ -38,7 +38,7 @@ def saboteur_agent_program(percepts, actuators):
     reported = gs['reported-cards']  # Dict of player_id and tuple (goal_index, bool)
     cards_played = gs['cards-played']  # Dict of player_id and list of cards played
     known_cards = gs['known-cards']  # List of list of bools
-    flipped_cards = gs['flipped-cards']
+    flipped_cards = gs['flipped-cards']  # List of tuples (x, y)
 
     # Get all legal moves
     legal_moves = get_legal_actions_gs(board, mining[player], cards, flipped_cards)
